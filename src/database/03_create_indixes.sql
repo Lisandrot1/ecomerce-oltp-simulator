@@ -1,0 +1,10 @@
+-- INDICE EN ORDERS PARA USER ID
+CREATE INDEX idx_orders_user_id ON ORDERS(user_id);
+-- INDICE PARA PROVIDER ID EN PRODUCTS
+CREATE INDEX idx_products_provider_id ON PRODUCTS(provider_id);
+-- INDICE DE ORDER EN ORDER DETAILS
+CREATE INDEX idx_orderdetails_order_id ON ORDERS_DETAILS(order_id);
+--INDICE PARA CATEGORY EN PRODUCTS
+CREATE INDEX idx_products_category_id ON PRODUCTS(category_id);
+-- INDICE PARA PRODUCTS EN ORDER DETAILS
+CREATE INDEX idx_orderdetails_products_id ON ORDERS_DETAILS(products_id);
