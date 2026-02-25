@@ -1,0 +1,109 @@
+[
+  { "name": "iPhone 15 Pro",            "category": "Smartphones",      "provider": "Apple",         "code": 10001, "cost_price": 720.00,  "sales_price": 999.00,  "stock": 80 },
+  { "name": "iPhone 14",                "category": "Smartphones",      "provider": "Apple",         "code": 10002, "cost_price": 520.00,  "sales_price": 699.00,  "stock": 120 },
+  { "name": "Samsung Galaxy S24",       "category": "Smartphones",      "provider": "Samsung",       "code": 10003, "cost_price": 650.00,  "sales_price": 899.00,  "stock": 95 },
+  { "name": "Samsung Galaxy A54",       "category": "Smartphones",      "provider": "Samsung",       "code": 10004, "cost_price": 250.00,  "sales_price": 399.00,  "stock": 150 },
+  { "name": "Xiaomi Redmi Note 13",     "category": "Smartphones",      "provider": "Xiaomi",        "code": 10005, "cost_price": 150.00,  "sales_price": 229.00,  "stock": 200 },
+  { "name": "Sony Xperia 1 V",          "category": "Smartphones",      "provider": "Sony",          "code": 10006, "cost_price": 900.00,  "sales_price": 1299.00, "stock": 40 },
+
+  { "name": "MacBook Pro 14",           "category": "Laptops",          "provider": "Apple",         "code": 20001, "cost_price": 1500.00, "sales_price": 1999.00, "stock": 50 },
+  { "name": "MacBook Air M2",           "category": "Laptops",          "provider": "Apple",         "code": 20002, "cost_price": 900.00,  "sales_price": 1199.00, "stock": 70 },
+  { "name": "Dell XPS 15",              "category": "Laptops",          "provider": "Dell",          "code": 20003, "cost_price": 1100.00, "sales_price": 1499.00, "stock": 45 },
+  { "name": "HP Spectre x360",          "category": "Laptops",          "provider": "HP Inc",        "code": 20004, "cost_price": 950.00,  "sales_price": 1299.00, "stock": 40 },
+  { "name": "Lenovo ThinkPad X1",       "category": "Laptops",          "provider": "Lenovo",        "code": 20005, "cost_price": 1200.00, "sales_price": 1599.00, "stock": 35 },
+  { "name": "Asus ZenBook 14",          "category": "Laptops",          "provider": "Asus",          "code": 20006, "cost_price": 700.00,  "sales_price": 949.00,  "stock": 60 },
+
+  { "name": "iPad Pro 12.9",            "category": "Tablets",          "provider": "Apple",         "code": 30001, "cost_price": 900.00,  "sales_price": 1099.00, "stock": 55 },
+  { "name": "iPad Air M1",              "category": "Tablets",          "provider": "Apple",         "code": 30002, "cost_price": 500.00,  "sales_price": 699.00,  "stock": 80 },
+  { "name": "Samsung Galaxy Tab S9",    "category": "Tablets",          "provider": "Samsung",       "code": 30003, "cost_price": 550.00,  "sales_price": 799.00,  "stock": 60 },
+  { "name": "Lenovo Tab P12",           "category": "Tablets",          "provider": "Lenovo",        "code": 30004, "cost_price": 280.00,  "sales_price": 399.00,  "stock": 70 },
+
+  { "name": "Sony WH-1000XM5",          "category": "Audio",            "provider": "Sony",          "code": 40001, "cost_price": 220.00,  "sales_price": 349.00,  "stock": 100 },
+  { "name": "Bose QuietComfort 45",     "category": "Audio",            "provider": "Bose",          "code": 40002, "cost_price": 200.00,  "sales_price": 329.00,  "stock": 90 },
+  { "name": "AirPods Pro 2",            "category": "Audio",            "provider": "Apple",         "code": 40003, "cost_price": 180.00,  "sales_price": 249.00,  "stock": 150 },
+  { "name": "JBL Charge 5",             "category": "Audio",            "provider": "JBL",           "code": 40004, "cost_price": 100.00,  "sales_price": 179.00,  "stock": 120 },
+  { "name": "JBL Flip 6",               "category": "Audio",            "provider": "JBL",           "code": 40005, "cost_price": 70.00,   "sales_price": 129.00,  "stock": 140 },
+  { "name": "Logitech MX Sound",        "category": "Audio",            "provider": "Logitech",      "code": 40006, "cost_price": 60.00,   "sales_price": 99.00,   "stock": 80 },
+
+  { "name": "Samsung QLED 55",          "category": "TV & Monitors",    "provider": "Samsung",       "code": 50001, "cost_price": 700.00,  "sales_price": 999.00,  "stock": 30 },
+  { "name": "LG OLED 65",               "category": "TV & Monitors",    "provider": "LG Electronics","code": 50002, "cost_price": 1200.00, "sales_price": 1799.00, "stock": 20 },
+  { "name": "Sony Bravia 50",           "category": "TV & Monitors",    "provider": "Sony",          "code": 50003, "cost_price": 550.00,  "sales_price": 799.00,  "stock": 25 },
+  { "name": "Dell UltraSharp 27",       "category": "TV & Monitors",    "provider": "Dell",          "code": 50004, "cost_price": 350.00,  "sales_price": 499.00,  "stock": 45 },
+
+  { "name": "Sony Alpha A7 IV",         "category": "Cameras",          "provider": "Sony",          "code": 60001, "cost_price": 2000.00, "sales_price": 2799.00, "stock": 20 },
+  { "name": "Sony ZV-E10",              "category": "Cameras",          "provider": "Sony",          "code": 60002, "cost_price": 450.00,  "sales_price": 699.00,  "stock": 35 },
+
+  { "name": "PS5 Console",              "category": "Gaming",           "provider": "Sony",          "code": 70001, "cost_price": 380.00,  "sales_price": 499.00,  "stock": 60 },
+  { "name": "Xbox Series X",            "category": "Gaming",           "provider": "Dell",          "code": 70002, "cost_price": 380.00,  "sales_price": 499.00,  "stock": 55 },
+  { "name": "Logitech G Pro X",         "category": "Gaming",           "provider": "Logitech",      "code": 70003, "cost_price": 80.00,   "sales_price": 129.00,  "stock": 100 },
+  { "name": "Logitech G502 Mouse",      "category": "Gaming",           "provider": "Logitech",      "code": 70004, "cost_price": 50.00,   "sales_price": 79.00,   "stock": 120 },
+
+  { "name": "Logitech MX Keys",         "category": "Computer Parts",   "provider": "Logitech",      "code": 80001, "cost_price": 70.00,   "sales_price": 109.00,  "stock": 100 },
+  { "name": "Logitech MX Master 3",     "category": "Computer Parts",   "provider": "Logitech",      "code": 80002, "cost_price": 60.00,   "sales_price": 99.00,   "stock": 110 },
+  { "name": "Samsung 1TB SSD",          "category": "Computer Parts",   "provider": "Samsung",       "code": 80003, "cost_price": 70.00,   "sales_price": 109.00,  "stock": 150 },
+  { "name": "Samsung 2TB SSD",          "category": "Computer Parts",   "provider": "Samsung",       "code": 80004, "cost_price": 120.00,  "sales_price": 189.00,  "stock": 100 },
+
+  { "name": "Nike Air Max 270",         "category": "Footwear",         "provider": "Nike",          "code": 90001, "cost_price": 80.00,   "sales_price": 149.00,  "stock": 200 },
+  { "name": "Nike Air Force 1",         "category": "Footwear",         "provider": "Nike",          "code": 90002, "cost_price": 60.00,   "sales_price": 109.00,  "stock": 250 },
+  { "name": "Adidas Ultraboost 23",     "category": "Footwear",         "provider": "Adidas",        "code": 90003, "cost_price": 100.00,  "sales_price": 179.00,  "stock": 180 },
+  { "name": "Adidas Stan Smith",        "category": "Footwear",         "provider": "Adidas",        "code": 90004, "cost_price": 55.00,   "sales_price": 89.00,   "stock": 220 },
+  { "name": "Puma RS-X",                "category": "Footwear",         "provider": "Puma",          "code": 90005, "cost_price": 65.00,   "sales_price": 109.00,  "stock": 160 },
+
+  { "name": "Nike Dri-FIT T-Shirt",     "category": "Men Clothing",     "provider": "Nike",          "code": 11001, "cost_price": 20.00,   "sales_price": 34.99,   "stock": 300 },
+  { "name": "Adidas Tiro Track Pants",  "category": "Men Clothing",     "provider": "Adidas",        "code": 11002, "cost_price": 30.00,   "sales_price": 54.99,   "stock": 250 },
+  { "name": "Levis 511 Slim Jeans",     "category": "Men Clothing",     "provider": "Levi Strauss",  "code": 11003, "cost_price": 35.00,   "sales_price": 69.99,   "stock": 300 },
+  { "name": "Calvin Klein Polo",        "category": "Men Clothing",     "provider": "Calvin Klein",  "code": 11004, "cost_price": 30.00,   "sales_price": 59.99,   "stock": 200 },
+  { "name": "HM Oxford Shirt",          "category": "Men Clothing",     "provider": "H&M",           "code": 11005, "cost_price": 15.00,   "sales_price": 29.99,   "stock": 350 },
+  { "name": "Zara Slim Chinos",         "category": "Men Clothing",     "provider": "Zara",          "code": 11006, "cost_price": 25.00,   "sales_price": 49.99,   "stock": 280 },
+
+  { "name": "Zara Floral Dress",        "category": "Women Clothing",   "provider": "Zara",          "code": 12001, "cost_price": 25.00,   "sales_price": 49.99,   "stock": 300 },
+  { "name": "HM Linen Blouse",          "category": "Women Clothing",   "provider": "H&M",           "code": 12002, "cost_price": 12.00,   "sales_price": 24.99,   "stock": 350 },
+  { "name": "Calvin Klein Midi Skirt",  "category": "Women Clothing",   "provider": "Calvin Klein",  "code": 12003, "cost_price": 35.00,   "sales_price": 69.99,   "stock": 200 },
+  { "name": "Levis High Rise Jeans",    "category": "Women Clothing",   "provider": "Levi Strauss",  "code": 12004, "cost_price": 38.00,   "sales_price": 74.99,   "stock": 250 },
+  { "name": "Nike Sportswear Hoodie",   "category": "Women Clothing",   "provider": "Nike",          "code": 12005, "cost_price": 45.00,   "sales_price": 79.99,   "stock": 200 },
+
+  { "name": "Nike Pro Training Kit",    "category": "Sports & Fitness", "provider": "Nike",          "code": 13001, "cost_price": 55.00,   "sales_price": 89.99,   "stock": 150 },
+  { "name": "Adidas Yoga Mat",          "category": "Sports & Fitness", "provider": "Adidas",        "code": 13002, "cost_price": 25.00,   "sales_price": 44.99,   "stock": 200 },
+  { "name": "Under Armour Backpack",    "category": "Sports & Fitness", "provider": "Under Armour",  "code": 13003, "cost_price": 40.00,   "sales_price": 69.99,   "stock": 180 },
+  { "name": "Under Armour Hoodie",      "category": "Sports & Fitness", "provider": "Under Armour",  "code": 13004, "cost_price": 45.00,   "sales_price": 74.99,   "stock": 160 },
+  { "name": "Puma Running Shorts",      "category": "Sports & Fitness", "provider": "Puma",          "code": 13005, "cost_price": 20.00,   "sales_price": 34.99,   "stock": 220 },
+
+  { "name": "IKEA KALLAX Shelf",        "category": "Home & Kitchen",   "provider": "IKEA",          "code": 14001, "cost_price": 45.00,   "sales_price": 79.99,   "stock": 80 },
+  { "name": "IKEA BILLY Bookcase",      "category": "Home & Kitchen",   "provider": "IKEA",          "code": 14002, "cost_price": 35.00,   "sales_price": 59.99,   "stock": 90 },
+  { "name": "IKEA POANG Chair",         "category": "Home & Kitchen",   "provider": "IKEA",          "code": 14003, "cost_price": 60.00,   "sales_price": 99.99,   "stock": 70 },
+  { "name": "Bosch Coffee Maker",       "category": "Home & Kitchen",   "provider": "Bosch",         "code": 14004, "cost_price": 80.00,   "sales_price": 129.99,  "stock": 100 },
+  { "name": "Philips Air Fryer",        "category": "Home & Kitchen",   "provider": "Philips",       "code": 14005, "cost_price": 70.00,   "sales_price": 119.99,  "stock": 120 },
+  { "name": "Philips Blender",          "category": "Home & Kitchen",   "provider": "Philips",       "code": 14006, "cost_price": 40.00,   "sales_price": 69.99,   "stock": 130 },
+
+  { "name": "Whirlpool Washing Machine","category": "Appliances",       "provider": "Whirlpool",     "code": 15001, "cost_price": 400.00,  "sales_price": 599.00,  "stock": 25 },
+  { "name": "LG Refrigerator 20ft",    "category": "Appliances",       "provider": "LG Electronics","code": 15002, "cost_price": 600.00,  "sales_price": 899.00,  "stock": 20 },
+  { "name": "Samsung Microwave",        "category": "Appliances",       "provider": "Samsung",       "code": 15003, "cost_price": 120.00,  "sales_price": 199.00,  "stock": 60 },
+  { "name": "Bosch Dishwasher",         "category": "Appliances",       "provider": "Bosch",         "code": 15004, "cost_price": 450.00,  "sales_price": 699.00,  "stock": 20 },
+  { "name": "Philips Steam Iron",       "category": "Appliances",       "provider": "Philips",       "code": 15005, "cost_price": 35.00,   "sales_price": 59.99,   "stock": 100 },
+
+  { "name": "LOreal Revitalift Serum",  "category": "Beauty",           "provider": "L'Oreal",       "code": 16001, "cost_price": 18.00,   "sales_price": 34.99,   "stock": 200 },
+  { "name": "LOreal True Match",        "category": "Beauty",           "provider": "L'Oreal",       "code": 16002, "cost_price": 10.00,   "sales_price": 19.99,   "stock": 250 },
+  { "name": "Nivea Soft Moisturizer",   "category": "Beauty",           "provider": "Nivea",         "code": 16003, "cost_price": 5.00,    "sales_price": 9.99,    "stock": 400 },
+  { "name": "Nivea Men Face Wash",      "category": "Beauty",           "provider": "Nivea",         "code": 16004, "cost_price": 4.00,    "sales_price": 7.99,    "stock": 350 },
+  { "name": "Philips Electric Shaver",  "category": "Beauty",           "provider": "Philips",       "code": 16005, "cost_price": 50.00,   "sales_price": 89.99,   "stock": 120 },
+
+  { "name": "Calvin Klein Eternity",    "category": "Fragrances",       "provider": "Calvin Klein",  "code": 17001, "cost_price": 40.00,   "sales_price": 79.99,   "stock": 150 },
+  { "name": "Calvin Klein CK One",      "category": "Fragrances",       "provider": "Calvin Klein",  "code": 17002, "cost_price": 30.00,   "sales_price": 59.99,   "stock": 180 },
+  { "name": "LOreal Men Expert",        "category": "Fragrances",       "provider": "L'Oreal",       "code": 17003, "cost_price": 20.00,   "sales_price": 39.99,   "stock": 160 },
+
+  { "name": "LEGO Creator 3in1",        "category": "Toys",             "provider": "LEGO",          "code": 18001, "cost_price": 35.00,   "sales_price": 59.99,   "stock": 120 },
+  { "name": "LEGO Technic Car",         "category": "Toys",             "provider": "LEGO",          "code": 18002, "cost_price": 60.00,   "sales_price": 99.99,   "stock": 100 },
+  { "name": "Mattel Hot Wheels Set",    "category": "Toys",             "provider": "Mattel",        "code": 18003, "cost_price": 15.00,   "sales_price": 24.99,   "stock": 200 },
+  { "name": "Mattel Barbie Dreamhouse", "category": "Toys",             "provider": "Mattel",        "code": 18004, "cost_price": 80.00,   "sales_price": 139.99,  "stock": 80 },
+  { "name": "Hasbro Monopoly",          "category": "Toys",             "provider": "Hasbro",        "code": 18005, "cost_price": 20.00,   "sales_price": 34.99,   "stock": 150 },
+  { "name": "Hasbro Jenga",             "category": "Toys",             "provider": "Hasbro",        "code": 18006, "cost_price": 12.00,   "sales_price": 21.99,   "stock": 180 },
+
+  { "name": "Nestle KitKat Box",        "category": "Food & Beverages", "provider": "Nestlé",        "code": 19001, "cost_price": 8.00,    "sales_price": 14.99,   "stock": 500 },
+  { "name": "Nestle Nescafe Gold",      "category": "Food & Beverages", "provider": "Nestlé",        "code": 19002, "cost_price": 6.00,    "sales_price": 11.99,   "stock": 450 },
+  { "name": "Nestle Milo 400g",         "category": "Food & Beverages", "provider": "Nestlé",        "code": 19003, "cost_price": 5.00,    "sales_price": 9.99,    "stock": 400 },
+
+  { "name": "HP LaserJet Printer",      "category": "Office Supplies",  "provider": "HP Inc",        "code": 20101, "cost_price": 150.00,  "sales_price": 249.00,  "stock": 50 },
+  { "name": "HP Ink Cartridge Black",   "category": "Office Supplies",  "provider": "HP Inc",        "code": 20102, "cost_price": 12.00,   "sales_price": 24.99,   "stock": 300 },
+  { "name": "Philips LED Desk Lamp",    "category": "Office Supplies",  "provider": "Philips",       "code": 20103, "cost_price": 25.00,   "sales_price": 44.99,   "stock": 150 },
+  { "name": "Logitech Webcam C920",     "category": "Office Supplies",  "provider": "Logitech",      "code": 20104, "cost_price": 55.00,   "sales_price": 89.99,   "stock": 120 }
+]

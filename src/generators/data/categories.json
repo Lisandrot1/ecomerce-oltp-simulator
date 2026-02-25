@@ -1,0 +1,22 @@
+[
+  { "name": "Smartphones",       "description": "Mobile phones and accessories" },
+  { "name": "Laptops",           "description": "Portable computers and notebooks" },
+  { "name": "Tablets",           "description": "Tablet computers and e-readers" },
+  { "name": "Audio",             "description": "Headphones, speakers and sound systems" },
+  { "name": "TV & Monitors",     "description": "Televisions and computer monitors" },
+  { "name": "Cameras",           "description": "Digital cameras and photography gear" },
+  { "name": "Gaming",            "description": "Consoles, games and gaming accessories" },
+  { "name": "Computer Parts",    "description": "Components, peripherals and storage" },
+  { "name": "Men Clothing",      "description": "Shirts, pants, jackets and men apparel" },
+  { "name": "Women Clothing",    "description": "Dresses, blouses, skirts and women apparel" },
+  { "name": "Footwear",          "description": "Sneakers, boots, sandals and shoes" },
+  { "name": "Sports & Fitness",  "description": "Equipment, clothing and accessories for sports" },
+  { "name": "Home & Kitchen",    "description": "Furniture, cookware and home essentials" },
+  { "name": "Appliances",        "description": "Washing machines, refrigerators and home appliances" },
+  { "name": "Beauty",            "description": "Skincare, makeup and personal care products" },
+  { "name": "Fragrances",        "description": "Perfumes and colognes" },
+  { "name": "Toys",              "description": "Toys and games for children" },
+  { "name": "Books",             "description": "Physical and digital books" },
+  { "name": "Food & Beverages",  "description": "Packaged food, drinks and snacks" },
+  { "name": "Office Supplies",   "description": "Stationery, printers and office equipment" }
+]
