@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 faker = Faker('es_CO')
 log = logs()
 
-def insert_users(conn, volume=2):
+def insert_users(conn, volume=5):
     try:
         user_ids = []
         for _ in range(volume):
@@ -169,30 +169,54 @@ def insert_products(conn, category_ids: dict, provider_ids: dict):
         return {}
 
 
-def insert_orders(conn, user_ids, volume_per_user=1):
+def get_all_user_ids(conn):
+    """Retorna todos los IDs de usuarios existentes en la DB."""
     try:
-        log.info('Iniciando creacion de ORDERS')
+        result = conn.execute(text("SELECT user_id FROM USERS"))
+        return [row[0] for row in result.fetchall()]
+    except Exception as ex:
+        log.error(f'ERROR en get_all_user_ids: {ex}')
+        return []
+
+
+def get_product_price_map(conn):
+    """Retorna un mapeo de products_id -> sales_price para productos existentes."""
+    try:
+        result = conn.execute(text("SELECT products_id, sales_price FROM PRODUCTS WHERE status = 'active'"))
+        return {row[0]: float(row[1]) for row in result.fetchall()}
+    except Exception as ex:
+        log.error(f'ERROR en get_product_price_map: {ex}')
+        return {}
+
+
+def insert_orders(conn, user_ids, volume=100):
+    try:
+        log.info(f'Iniciando creacion de {volume} ORDERS')
         order_ids = []
         statuses = ['pending', 'processing', 'completed', 'cancelled']
         
-        for user_id in user_ids:
-            for _ in range(volume_per_user):
-                order_data = {
-                    'user_id': user_id,
-                    'shipping_cost': round(random.uniform(5.0, 20.0), 2),
-                    'total_amount': 0.0, # Se actualizará después o se puede dejar en 0 por ahora
-                    'status': random.choice(statuses)
-                }
-                
-                result = conn.execute(
-                    text("""
-                        INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
-                        VALUES (:user_id, :shipping_cost, :total_amount, :status)
-                        RETURNING orders_id
-                    """),
-                    order_data
-                )
-                order_ids.append(result.fetchone()[0])
+        if not user_ids:
+            log.error("No hay usuarios disponibles para crear ordenes.")
+            return []
+
+        for _ in range(volume):
+            user_id = random.choice(user_ids)
+            order_data = {
+                'user_id': user_id,
+                'shipping_cost': round(random.uniform(5.0, 20.0), 2),
+                'total_amount': 0.0,
+                'status': random.choice(statuses)
+            }
+            
+            result = conn.execute(
+                text("""
+                    INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
+                    VALUES (:user_id, :shipping_cost, :total_amount, :status)
+                    RETURNING orders_id
+                """),
+                order_data
+            )
+            order_ids.append(result.fetchone()[0])
         
         conn.commit()
         log.info(f'Insert ORDERS exitoso — {len(order_ids)} registros')
