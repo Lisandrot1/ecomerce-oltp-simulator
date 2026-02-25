@@ -34,7 +34,7 @@ def main_ecommerce():
                 log.info("Usando metadata existente.")
 
             # --- 2. USUARIOS NUEVOS (15 - 20 por día) ---
-            new_users_volume = random.randint(15, 20)
+            new_users_volume = random.randint(10, 15)
             log.info(f"Simulando {new_users_volume} nuevos usuarios...")
             insert_users(conn, volume=new_users_volume)
 
@@ -43,7 +43,7 @@ def main_ecommerce():
             all_user_ids = get_all_user_ids(conn)
             
             if all_user_ids and product_price_map:
-                daily_orders_volume = random.randint(1000, 2000)
+                daily_orders_volume = random.randint(1000, 1500)
                 log.info(f"Simulando {daily_orders_volume} nuevas órdenes...")
                 
                 # Generamos órdenes
