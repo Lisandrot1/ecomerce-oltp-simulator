@@ -11,9 +11,10 @@ def get_connection():
     USER = os.environ['NEON_POSTGRES_USER']
     PASSWORD = os.environ['NEON_POSTGRES_PASSWORD']
     DATABASE = os.environ['NEON_DATABASE']
+    PORT = os.environ['NEON_DB_PORT']
 
     engine = create_engine(
-        f'postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:5432/{DATABASE}?sslmode=require',
+        f'postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}?sslmode=require',
         echo=False
         )
 
