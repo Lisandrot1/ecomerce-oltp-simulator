@@ -79,7 +79,7 @@ users ──── orders ──── order_details
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/tu-usuario/ecommerce-oltp-simulator.git
+git clone [https://github.com/tu-usuario/ecommerce-oltp-simulator.git](https://github.com/Lisandrot1/ecomerce-oltp-simulator.git)
 cd ecommerce-oltp-simulator
 ```
 
