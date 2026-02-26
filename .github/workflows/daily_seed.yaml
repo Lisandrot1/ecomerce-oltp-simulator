@@ -25,5 +25,8 @@ jobs:
 
       - name: Generador de Datos
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_NEON }}
+          NEON_DB_HOST: ${{ secrets.NEON_DB_HOST }}
+          NEON_POSTGRES_USER: ${{ secrets.NEON_POSTGRES_USER }}
+          NEON_POSTGRES_PASSWORD: ${{ secrets.NEON_POSTGRES_PASSWORD }}
+          NEON_DATABASE: ${{ secrets.NEON_DATABASE }}
         run: python src/main.py   
