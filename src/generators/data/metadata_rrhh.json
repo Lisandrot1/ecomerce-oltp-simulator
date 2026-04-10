@@ -1,0 +1,19 @@
+{
+  "departments": [
+    {"name": "Recursos Humanos", "budget_range": [100000000, 200000000]},
+    {"name": "Tecnología", "budget_range": [400000000, 800000000]},
+    {"name": "Finanzas", "budget_range": [300000000, 500000000]},
+    {"name": "Ventas", "budget_range": [200000000, 400000000]},
+    {"name": "Logística", "budget_range": [250000000, 450000000]},
+    {"name": "Operaciones", "budget_range": [180000000, 350000000]},
+    {"name": "Atención al Cliente", "budget_range": [100000000, 250000000]}
+  ],
+  "positions": [
+    {"name": "Analista Junior", "level": "Junior", "salary_range": [1500000, 3000000]},
+    {"name": "Analista Mid", "level": "Mid", "salary_range": [3000000, 6000000]},
+    {"name": "Analista Senior", "level": "Senior", "salary_range": [6000000, 15000000]},
+    {"name": "Coordinador", "level": "Management", "salary_range": [5000000, 10000000]},
+    {"name": "Gerente", "level": "Director", "salary_range": [10000000, 25000000]},
+    {"name": "Líder Técnico", "level": "Senior", "salary_range": [8000000, 18000000]}
+  ]
+}

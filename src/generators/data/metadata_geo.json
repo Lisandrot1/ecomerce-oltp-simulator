@@ -1,0 +1,26 @@
+[
+  {
+    "country": "Colombia",
+    "cities": ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga"]
+  },
+  {
+    "country": "México",
+    "cities": ["Ciudad de México", "Guadalajara", "Monterrey", "Puebla", "Cancún", "Tijuana"]
+  },
+  {
+    "country": "Argentina",
+    "cities": ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata", "Mar del Plata"]
+  },
+  {
+    "country": "España",
+    "cities": ["Madrid", "Barcelona", "Valencia", "Sevilla", "Zaragoza", "Málaga"]
+  },
+  {
+    "country": "Chile",
+    "cities": ["Santiago", "Valparaíso", "Concepción", "Antofagasta", "Viña del Mar"]
+  },
+  {
+    "country": "Estados Unidos",
+    "cities": ["New York", "Los Angeles", "Miami", "Chicago", "Houston", "San Francisco"]
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "campaign_names": [
+    "Gran Oferta de Verano",
+    "Black Friday Anticipado",
+    "Lanzamiento Nueva Colección",
+    "Promo Fidelidad 2024",
+    "Descuentos Relámpago",
+    "Campaña Retorno al Colegio",
+    "Día de la Madre Especial",
+    "Navidad con Todo",
+    "Cyber Monday",
+    "Liquidación de Temporada"
+  ],
+  "channels": ["email", "social_media", "google_ads", "sms", "whatsapp"],
+  "lead_sources": ["organic", "paid_ads", "referral", "social_media", "direct"],
+  "lead_statuses": ["new", "contacted", "qualified", "converted"],
+  "event_types": ["sent", "opened", "clicked", "bounced", "unsubscribed"],
+  "segments": [
+    {"name": "VIP", "min": 50, "max": 9999, "desc": "Clientes de alto valor"},
+    {"name": "Frecuente", "min": 10, "max": 49, "desc": "Clientes con compras regulares"},
+    {"name": "Ocasional", "min": 2, "max": 9, "desc": "Clientes que compran de vez en cuando"},
+    {"name": "Nuevo", "min": 0, "max": 1, "desc": "Clientes con primera compra o sin compras"}
+  ],
+  "promotions": [
+    "Cupón Bienvenida",
+    "Descuento 10% Referido",
+    "Flash Sale 24h",
+    "Envío Gratis",
+    "CyberLunes Especial"
+  ]
+}

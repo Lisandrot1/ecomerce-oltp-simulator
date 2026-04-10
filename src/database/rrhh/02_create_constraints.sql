@@ -1,0 +1,10 @@
+ALTER TABLE EMPLOYEES ADD CONSTRAINT fk_employees_department FOREIGN KEY (department_id) REFERENCES DEPARTMENTS(department_id);
+ALTER TABLE EMPLOYEES ADD CONSTRAINT fk_employees_position FOREIGN KEY (position_id) REFERENCES POSITIONS(position_id);
+ALTER TABLE EMPLOYEES ADD CONSTRAINT fk_employees_manager FOREIGN KEY (manager_id) REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE ATTENDANCE ADD CONSTRAINT fk_attendance_employee FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE PAYROLL ADD CONSTRAINT fk_payroll_employee FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE PERFORMANCE ADD CONSTRAINT fk_performance_employee FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id);
+ALTER TABLE PERFORMANCE ADD CONSTRAINT fk_performance_reviewer FOREIGN KEY (reviewer_id) REFERENCES EMPLOYEES(employee_id);
