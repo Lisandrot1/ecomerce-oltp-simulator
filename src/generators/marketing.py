@@ -104,7 +104,8 @@ def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
             geo = random.choice(geo_data)
             
             # Simular que algunos leads ya son usuarios (conversión)
-            uid = random.choice(user_ids) if user_ids and random.random() > 0.7 else None
+            # Ajustamos la probabilidad al 40% según solicitud
+            uid = random.choice(user_ids) if user_ids and random.random() > 0.6 else None
             
             data = {
                 'camp_id': random.choice(campaign_ids),
