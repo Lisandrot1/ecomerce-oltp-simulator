@@ -4,14 +4,39 @@ import generators.ecommerce as eco
 import generators.rrhh as rrhh
 import generators.marketing as mkt
 import random
+import datetime
 
 log = logs(__name__)
 
+def get_hourly_weight():
+    """
+    Returns a weight (0.1 to 1.0) based on the current hour to simulate 
+    realistic daily activity cycles.
+    """
+    hour = datetime.datetime.now().hour
+    
+    # 00:00 - 05:00 -> Very Low (10-15%)
+    if 0 <= hour <= 5:
+        return random.uniform(0.10, 0.15)
+    # 06:00 - 08:00 -> Ramping up (30-60%)
+    elif 6 <= hour <= 8:
+        return random.uniform(0.30, 0.60)
+    # 09:00 - 17:00 -> Peak (80-100%)
+    elif 9 <= hour <= 17:
+        return random.uniform(0.80, 1.00)
+    # 18:00 - 21:00 -> Evening (50-70%)
+    elif 18 <= hour <= 21:
+        return random.uniform(0.50, 0.70)
+    # 22:00 - 23:00 -> Ramping down (20-30%)
+    else:
+        return random.uniform(0.20, 0.30)
+
 def main_ecommerce(employee_ids=None):
     try:
+        weight = get_hourly_weight()
         with get_connection('ecommerce').connect() as conn:
             log.info('=' * 50)
-            log.info('RUNNING ECOMMERCE GENERATOR')
+            log.info(f'RUNNING ECOMMERCE GENERATOR (Weight: {weight:.2f})')
 
             product_price_map = eco.get_product_price_map(conn)
             
@@ -21,16 +46,19 @@ def main_ecommerce(employee_ids=None):
                 provider_ids = eco.insert_providers(conn)
                 product_price_map = eco.insert_products(conn, category_ids, provider_ids)
 
-            # USUARIOS NUEVOS (Proporcional para llegar a 100k - 1M acumulados)
-            eco.insert_users(conn, volume=20000)
+            # USUARIOS NUEVOS
+            user_vol = int(300 * weight) # Meta: ~20k/día acumulados con 89 runs
+            if user_vol > 0:
+                eco.insert_users(conn, volume=user_vol)
 
-            # ÓRDENES (Target: 80k por ejecución para llegar a 500k pronto)
+            # ÓRDENES
             all_user_ids = eco.get_all_user_ids(conn)
             if all_user_ids and product_price_map:
-                order_volume = 80000
-                order_ids = eco.insert_orders(conn, all_user_ids, employee_ids=employee_ids, volume=order_volume)
-                eco.insert_order_details(conn, order_ids, product_price_map)
-                eco.insert_payments(conn, order_ids)
+                order_vol = int(1600 * weight) # Meta: ~100k/día acumulados con 89 runs
+                if order_vol > 0:
+                    order_ids = eco.insert_orders(conn, all_user_ids, employee_ids=employee_ids, volume=order_vol)
+                    eco.insert_order_details(conn, order_ids, product_price_map)
+                    eco.insert_payments(conn, order_ids)
 
             log.info('ECOMMERCE GENERATOR FINISHED')
             log.info('=' * 50)
@@ -41,18 +69,24 @@ def main_ecommerce(employee_ids=None):
 
 def main_rrhh():
     try:
+        weight = get_hourly_weight()
+        # RRHH usually has less dynamic hourly changes, but we apply a smaller weight variation
+        # Or peak during business hours
         with get_connection('rrhh').connect() as conn:
             log.info('=' * 50)
-            log.info('RUNNING RRHH GENERATOR')
+            log.info(f'RUNNING RRHH GENERATOR (Weight: {weight:.2f})')
             
             dept_ids = rrhh.insert_departments(conn)
             pos_ids = rrhh.insert_positions(conn)
-            emp_ids = rrhh.insert_employees(conn, dept_ids, pos_ids, volume=200)
-            rrhh.insert_attendance(conn, emp_ids, days=15)
-            rrhh.insert_payroll(conn, emp_ids)
-            rrhh.insert_performance(conn, emp_ids)
             
-            # Recuperar todos los IDs para que el random sea más variado
+            # Employees and other RRHH data are less frequent
+            emp_vol = int(5 * weight) # Meta: ~300 empleados/día acumulado
+            if emp_vol > 0:
+                emp_ids = rrhh.insert_employees(conn, dept_ids, pos_ids, volume=emp_vol)
+                rrhh.insert_attendance(conn, emp_ids, days=1) # Daily attendance
+                rrhh.insert_payroll(conn, emp_ids)
+                rrhh.insert_performance(conn, emp_ids)
+            
             all_emp_ids = rrhh.get_all_employee_ids(conn)
             
             log.info('RRHH GENERATOR FINISHED')
@@ -64,18 +98,36 @@ def main_rrhh():
 
 def main_marketing(user_ids, employee_ids, product_ids):
     try:
+        weight = get_hourly_weight()
         with get_connection('marketing').connect() as conn:
             log.info('=' * 50)
-            log.info('RUNNING MARKETING GENERATOR')
+            log.info(f'RUNNING MARKETING GENERATOR (Weight: {weight:.2f})')
             
-            camp_ids = mkt.insert_campaigns(conn, employee_ids=employee_ids, volume=50)
-            # Pasamos user_ids a leads para simular conversión
-            mkt.insert_leads(conn, camp_ids, user_ids=user_ids, volume=20000)
+            camp_vol = int(1 * weight) # Pocas campañas nuevas al día
+            if weight > 0.8: # Solo creamos campañas en horas pico
+                camp_ids = mkt.insert_campaigns(conn, employee_ids=employee_ids, volume=max(1, camp_vol))
+            else:
+                # Obtenemos campañas existentes si no creamos nuevas
+                result = conn.execute(text("SELECT campaign_id FROM CAMPAIGNS"))
+                camp_ids = [row[0] for row in result.fetchall()]
+                
+            lead_vol = int(300 * weight) # Meta: ~20k/día acumulado
+            if lead_vol > 0 and camp_ids:
+                mkt.insert_leads(conn, camp_ids, user_ids=user_ids, volume=lead_vol)
+            
             seg_ids = mkt.insert_customer_segments(conn)
-            mkt.insert_segment_assignments(conn, user_ids, seg_ids, volume=5000)
-            # Pasamos product_ids a promociones
-            mkt.insert_promotions(conn, product_ids=product_ids, volume=20)
-            mkt.insert_campaign_events(conn, camp_ids, user_ids, volume=50000)
+            
+            assign_vol = int(100 * weight)
+            if assign_vol > 0:
+                mkt.insert_segment_assignments(conn, user_ids, seg_ids, volume=assign_vol)
+            
+            promo_vol = int(1 * weight) if weight > 0.7 else 0
+            if promo_vol > 0:
+                mkt.insert_promotions(conn, product_ids=product_ids, volume=promo_vol)
+            
+            event_vol = int(1000 * weight) # Eventos de email
+            if event_vol > 0 and camp_ids:
+                mkt.insert_campaign_events(conn, camp_ids, user_ids, volume=event_vol)
             
             log.info('MARKETING GENERATOR FINISHED')
             log.info('=' * 50)
