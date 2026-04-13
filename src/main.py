@@ -31,7 +31,7 @@ def get_hourly_weight():
     else:
         return random.uniform(0.20, 0.30)
 
-def main_ecommerce(employee_ids=None):
+def main_ecommerce():
     try:
         weight = get_hourly_weight()
         with get_connection('ecommerce').connect() as conn:
@@ -56,7 +56,7 @@ def main_ecommerce(employee_ids=None):
             if all_user_ids and product_price_map:
                 order_vol = int(1600 * weight) # Meta: ~100k/día acumulados con 89 runs
                 if order_vol > 0:
-                    order_ids = eco.insert_orders(conn, all_user_ids, employee_ids=employee_ids, volume=order_vol)
+                    order_ids = eco.insert_orders(conn, all_user_ids, volume=order_vol)
                     eco.insert_order_details(conn, order_ids, product_price_map)
                     eco.insert_payments(conn, order_ids)
 
@@ -138,8 +138,8 @@ if __name__ == "__main__":
     # 1. Correr RRHH primero para obtener empleados (Managers/Responsables)
     all_employee_ids = main_rrhh()
     
-    # 2. Correr Ecommerce (necesita empleados para las ordenes)
-    all_user_ids, all_product_ids = main_ecommerce(employee_ids=all_employee_ids)
+    # 2. Correr Ecommerce
+    all_user_ids, all_product_ids = main_ecommerce()
     
     # 3. Correr Marketing (necesita users, empleados y productos para sus vínculos lógicos)
     if all_user_ids and all_employee_ids and all_product_ids:

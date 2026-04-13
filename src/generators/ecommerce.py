@@ -211,7 +211,7 @@ def get_product_price_map(conn):
         return {}
 
 
-def insert_orders(conn, user_ids, employee_ids=None, volume=100):
+def insert_orders(conn, user_ids, volume=100):
     try:
         log.info(f'Iniciando creacion de {volume} ORDERS')
         order_ids = []
@@ -223,11 +223,9 @@ def insert_orders(conn, user_ids, employee_ids=None, volume=100):
 
         for _ in range(volume):
             user_id = random.choice(user_ids)
-            emp_id = random.choice(employee_ids) if employee_ids else None
             
             order_data = {
                 'user_id': user_id,
-                'employee_id': emp_id,
                 'shipping_cost': round(random.uniform(5.0, 20.0), 2),
                 'total_amount': 0.0,
                 'status': random.choice(statuses)
@@ -235,8 +233,8 @@ def insert_orders(conn, user_ids, employee_ids=None, volume=100):
             
             result = conn.execute(
                 text("""
-                    INSERT INTO ORDERS (user_id, employee_id, shipping_cost, total_amount, status)
-                    VALUES (:user_id, :employee_id, :shipping_cost, :total_amount, :status)
+                    INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
+                    VALUES (:user_id, :shipping_cost, :total_amount, :status)
                     RETURNING orders_id
                 """),
                 order_data

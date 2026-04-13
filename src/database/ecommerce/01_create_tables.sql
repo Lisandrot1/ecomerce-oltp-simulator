@@ -69,7 +69,6 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TABLE IF NOT EXISTS ORDERS(
     orders_id SERIAL PRIMARY KEY NOT NULL,
     user_id INT NOT NULL REFERENCES USERS(user_id),
-    employee_id INT, -- Logical relation to RRHH.EMPLOYEES
     shipping_cost NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     total_amount NUMERIC(12,2) NOT NULL DEFAULT 0.00,
     status VARCHAR(50) NOT NULL,
