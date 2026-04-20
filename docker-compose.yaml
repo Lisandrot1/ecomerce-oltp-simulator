@@ -13,6 +13,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${ECOMMERCE_DB_NAME}
+    networks:
+      - data-network
 
 #####################################
 # SERVICIO DE POSTGRESQL RRHH
@@ -28,6 +30,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${RRHH_DB_NAME}
+    networks:
+      - data-network
 
 #####################################
 # SERVICIO DE POSTGRESQL MARKETING
@@ -35,7 +39,7 @@ services:
   db_marketing:
     image: postgres:latest
     ports:
-      - "5434:5432"  
+      - "5434:5432"
     volumes:
       - ./src/database/marketing:/docker-entrypoint-initdb.d/
       - postgres_marketing_data:/var/lib/postgresql
@@ -43,6 +47,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${MARKETING_DB_NAME}
+    networks:
+      - data-network
 
 #############################################################
 # INTERFAZ GRAFICA DE PGADMIN4
@@ -59,6 +65,8 @@ services:
       - db_ecommerce
       - db_rrhh
       - db_marketing
+    networks:
+      - data-network
 
 ################################################
 # SERVICIO DEL SIMULADOR
@@ -74,10 +82,15 @@ services:
       - db_ecommerce
       - db_rrhh
       - db_marketing
+    networks:
+      - data-network
 
 
 volumes:
   postgres_ecommerce_data:
   postgres_rrhh_data:
   postgres_marketing_data:
-  
+
+networks:
+  data-network:
+    external: true

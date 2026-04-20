@@ -60,6 +60,9 @@ def main_ecommerce():
                     eco.insert_order_details(conn, order_ids, product_price_map)
                     eco.insert_payments(conn, order_ids)
 
+            # SIMULACIÓN DE ACTUALIZACIONES (Para updated_at)
+            eco.simulate_ecommerce_updates(conn, volume=int(10 * weight) + 1)
+
             log.info('ECOMMERCE GENERATOR FINISHED')
             log.info('=' * 50)
             return all_user_ids, list(product_price_map.keys())
@@ -88,6 +91,10 @@ def main_rrhh():
                 rrhh.insert_performance(conn, emp_ids)
             
             all_emp_ids = rrhh.get_all_employee_ids(conn)
+
+            # SIMULACIÓN DE ACTUALIZACIONES (Para updated_at)
+            if all_emp_ids:
+                rrhh.simulate_rrhh_updates(conn, volume=int(5 * weight) + 1)
             
             log.info('RRHH GENERATOR FINISHED')
             log.info('=' * 50)
@@ -121,13 +128,16 @@ def main_marketing(user_ids, employee_ids, product_ids):
             if assign_vol > 0:
                 mkt.insert_segment_assignments(conn, user_ids, seg_ids, volume=assign_vol)
             
-            promo_vol = int(1 * weight) if weight > 0.7 else 0
-            if promo_vol > 0:
-                mkt.insert_promotions(conn, product_ids=product_ids, volume=promo_vol)
+            # PROMOTIONS (Inicialización garantizada + Crecimiento ocasional)
+            # Siempre las llamamos; la función interna maneja si ya existen
+            mkt.insert_promotions(conn, product_ids=product_ids)
             
             event_vol = int(1000 * weight) # Eventos de email
             if event_vol > 0 and camp_ids:
                 mkt.insert_campaign_events(conn, camp_ids, user_ids, volume=event_vol)
+            
+            # SIMULACIÓN DE ACTUALIZACIONES (Para updated_at)
+            mkt.simulate_marketing_updates(conn, volume=int(10 * weight) + 1)
             
             log.info('MARKETING GENERATOR FINISHED')
             log.info('=' * 50)

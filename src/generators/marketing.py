@@ -238,12 +238,45 @@ def insert_promotions(conn, product_ids=None, volume=5):
             promo_map[name] = pid
 
         conn.commit()
-        log.info(f'PROMOTIONS listas — {len(promo_ids)} registros')
-        return promo_ids
+        log.info(f'PROMOTIONS listas — {len(promo_map)} registros en total')
+        return list(promo_map.values())
     except Exception as ex:
         conn.rollback()
         log.error(f'Error en insert_promotions: {ex}', exc_info=True)
         return []
+
+def simulate_marketing_updates(conn, volume=5):
+    """
+    Actualiza aleatoriamente algunos leads o campañas para verificar triggers de updated_at.
+    """
+    try:
+        log.info(f'Simulando {volume} actualizaciones en Marketing para updated_at')
+        
+        # 1. Actualizar estados de Leads
+        result = conn.execute(text("SELECT lead_id FROM LEADS ORDER BY RANDOM() LIMIT :vol"), {'vol': volume})
+        lead_ids = [row[0] for row in result.fetchall()]
+        
+        for lid in lead_ids:
+            new_status = random.choice(['contacted', 'qualified', 'converted'])
+            conn.execute(
+                text("UPDATE LEADS SET status = :status WHERE lead_id = :id"),
+                {'status': new_status, 'id': lid}
+            )
+            
+        # 2. Actualizar spent en Campañas
+        result = conn.execute(text("SELECT campaign_id, spent FROM CAMPAIGNS ORDER BY RANDOM() LIMIT :vol"), {'vol': max(1, volume // 2)})
+        for cid, spent in result.fetchall():
+            new_spent = float(spent) + random.uniform(1000, 10000)
+            conn.execute(
+                text("UPDATE CAMPAIGNS SET spent = :spent WHERE campaign_id = :id"),
+                {'spent': new_spent, 'id': cid}
+            )
+            
+        conn.commit()
+        log.info('Simulación de actualizaciones en Marketing completada')
+    except Exception as ex:
+        conn.rollback()
+        log.error(f'Error en simulate_marketing_updates: {ex}')
 
 def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
     try:

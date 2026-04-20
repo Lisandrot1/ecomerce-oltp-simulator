@@ -224,11 +224,18 @@ def insert_orders(conn, user_ids, volume=100):
         for _ in range(volume):
             user_id = random.choice(user_ids)
             
+            # Ajustar estados de pedidos con pesos: 50% completado, 30% proceso, 10% cancelado, 10% pendiente
+            status = random.choices(
+                ['completed', 'processing', 'cancelled', 'pending'],
+                weights=[0.5, 0.3, 0.1, 0.1],
+                k=1
+            )[0]
+            
             order_data = {
                 'user_id': user_id,
                 'shipping_cost': round(random.uniform(5.0, 20.0), 2),
                 'total_amount': 0.0,
-                'status': random.choice(statuses)
+                'status': status
             }
             
             result = conn.execute(
@@ -339,3 +346,35 @@ def insert_payments(conn, order_ids):
     except Exception as ex:
         conn.rollback()
         log.error(f'ERROR en insert_payments: {ex}', exc_info=True)
+
+def simulate_ecommerce_updates(conn, volume=5):
+    """
+    Actualiza aleatoriamente algunos pedidos o usuarios para verificar triggers de updated_at.
+    """
+    try:
+        log.info(f'Simulando {volume} actualizaciones en Ecommerce para updated_at')
+        
+        # 1. Actualizar estados de pedidos (avanzar algunos)
+        result = conn.execute(text("SELECT orders_id FROM ORDERS WHERE status = 'processing' ORDER BY RANDOM() LIMIT :vol"), {'vol': volume})
+        order_ids = [row[0] for row in result.fetchall()]
+        
+        for oid in order_ids:
+            conn.execute(
+                text("UPDATE ORDERS SET status = 'completed' WHERE orders_id = :id"),
+                {'id': oid}
+            )
+            
+        # 2. Actualizar direcciones de usuarios
+        result = conn.execute(text("SELECT user_id FROM USERS ORDER BY RANDOM() LIMIT :vol"), {'vol': max(1, volume // 2)})
+        for row in result.fetchall():
+            new_address = faker.address().replace('\n', ', ')
+            conn.execute(
+                text("UPDATE USERS SET address = :address WHERE user_id = :id"),
+                {'address': new_address, 'id': row[0]}
+            )
+            
+        conn.commit()
+        log.info('Simulación de actualizaciones en Ecommerce completada')
+    except Exception as ex:
+        conn.rollback()
+        log.error(f'Error en simulate_ecommerce_updates: {ex}')

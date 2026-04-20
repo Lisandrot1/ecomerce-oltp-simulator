@@ -298,6 +298,37 @@ def insert_performance(conn, employee_ids):
         conn.rollback()
         log.error(f'Error en insert_performance: {ex}', exc_info=True)
 
+def simulate_rrhh_updates(conn, volume=5):
+    """
+    Actualiza aleatoriamente algunos empleados para verificar triggers de updated_at.
+    """
+    try:
+        log.info(f'Simulando {volume} actualizaciones en RRHH para updated_at')
+        
+        # 1. Actualizar salarios
+        result = conn.execute(text("SELECT employee_id, salary FROM EMPLOYEES ORDER BY RANDOM() LIMIT :vol"), {'vol': volume})
+        for eid, salary in result.fetchall():
+            new_salary = float(salary) * random.uniform(1.02, 1.05)
+            conn.execute(
+                text("UPDATE EMPLOYEES SET salary = :salary WHERE employee_id = :id"),
+                {'salary': new_salary, 'id': eid}
+            )
+            
+        # 2. Actualizar estados
+        result = conn.execute(text("SELECT employee_id FROM EMPLOYEES ORDER BY RANDOM() LIMIT :vol"), {'vol': max(1, volume // 2)})
+        for row in result.fetchall():
+            new_status = random.choice(['Activo', 'Vacaciones'])
+            conn.execute(
+                text("UPDATE EMPLOYEES SET status = :status WHERE employee_id = :id"),
+                {'status': new_status, 'id': row[0]}
+            )
+            
+        conn.commit()
+        log.info('Simulación de actualizaciones en RRHH completada')
+    except Exception as ex:
+        conn.rollback()
+        log.error(f'Error en simulate_rrhh_updates: {ex}')
+
 def get_all_employee_ids(conn):
     try:
         result = conn.execute(text("SELECT employee_id FROM EMPLOYEES"))
