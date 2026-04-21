@@ -12,6 +12,24 @@ from datetime import datetime, timedelta
 faker = Faker() # Usamos genérico para que no se sesgue solo a es_CO en ciudades
 log = logs()
 
+def apply_corruption(data, null_prob=0.15, duplicate_prob=0.15):
+    """
+    Aplica suciedad a los datos: nulos o duplicados.
+    Retorna (data_modificada, debe_duplicar)
+    """
+    should_duplicate = False
+    if random.random() < null_prob:
+        # Seleccionar 1-2 campos para poner en NULL (evitando IDs de relación)
+        keys = [k for k in data.keys() if not k.endswith('_id') and k not in ['created_at', 'updated_at']]
+        if keys:
+            for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
+                data[k] = None
+                
+    if random.random() < duplicate_prob:
+        should_duplicate = True
+        
+    return data, should_duplicate
+
 # Apunta al archivo donde está este código (ecommerce.py)
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
@@ -238,15 +256,25 @@ def insert_orders(conn, user_ids, volume=100):
                 'status': status
             }
             
-            result = conn.execute(
-                text("""
-                    INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
-                    VALUES (:user_id, :shipping_cost, :total_amount, :status)
-                    RETURNING orders_id
-                """),
-                order_data
-            )
-            order_ids.append(result.fetchone()[0])
+            # Aplicar corrupción 30% (15% nulos, 15% duplicados)
+            order_data, should_duplicate = apply_corruption(order_data, 0.15, 0.15)
+            
+            def do_insert(d):
+                res = conn.execute(
+                    text("""
+                        INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
+                        VALUES (:user_id, :shipping_cost, :total_amount, :status)
+                        RETURNING orders_id
+                    """),
+                    d
+                )
+                return res.fetchone()[0]
+
+            oid = do_insert(order_data)
+            order_ids.append(oid)
+            
+            if should_duplicate:
+                do_insert(order_data) # Duplicado (no guardamos el ID para evitar procesarlo doble en detalles si no queremos, o sí)
         
         conn.commit()
         log.info(f'Insert ORDERS exitoso — {len(order_ids)} registros')
@@ -286,13 +314,21 @@ def insert_order_details(conn, order_ids, product_price_map):
                     'unit_price': price
                 }
                 
-                conn.execute(
-                    text("""
-                        INSERT INTO ORDERS_DETAILS (products_id, order_id, quantity, unit_price)
-                        VALUES (:products_id, :order_id, :quantity, :unit_price)
-                    """),
-                    detail_data
-                )
+                # Aplicar corrupción 30% (15% nulos, 15% duplicados)
+                detail_data, should_duplicate = apply_corruption(detail_data, 0.15, 0.15)
+
+                def do_insert_detail(d):
+                    conn.execute(
+                        text("""
+                            INSERT INTO ORDERS_DETAILS (products_id, order_id, quantity, unit_price)
+                            VALUES (:products_id, :order_id, :quantity, :unit_price)
+                        """),
+                        d
+                    )
+                
+                do_insert_detail(detail_data)
+                if should_duplicate:
+                    do_insert_detail(detail_data)
             
             # Actualizar el total de la orden
             conn.execute(
@@ -333,13 +369,21 @@ def insert_payments(conn, order_ids):
                 'status': payment_status
             }
             
-            conn.execute(
-                text("""
-                    INSERT INTO PAYMENTS (order_id, payment_method, amount, status)
-                    VALUES (:order_id, :payment_method, :amount, :status)
-                """),
-                payment_data
-            )
+            # Aplicar corrupción 30% (15% nulos, 15% duplicados)
+            payment_data, should_duplicate = apply_corruption(payment_data, 0.15, 0.15)
+
+            def do_insert_payment(d):
+                conn.execute(
+                    text("""
+                        INSERT INTO PAYMENTS (order_id, payment_method, amount, status)
+                        VALUES (:order_id, :payment_method, :amount, :status)
+                    """),
+                    d
+                )
+
+            do_insert_payment(payment_data)
+            if should_duplicate:
+                do_insert_payment(payment_data)
             
         conn.commit()
         log.info(f'Insert PAYMENTS exitoso')

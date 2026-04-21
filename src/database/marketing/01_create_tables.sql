@@ -28,14 +28,14 @@ CREATE TABLE IF NOT EXISTS LEADS (
     lead_id SERIAL PRIMARY KEY,
     campaign_id INT REFERENCES CAMPAIGNS(campaign_id),
     user_id INT, -- Logical relation to ECOMMERCE.USERS (if converted)
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
     phone VARCHAR(20),
     city VARCHAR(100),
     country VARCHAR(100),
-    source VARCHAR(50) NOT NULL,
-    status VARCHAR(50) NOT NULL,
+    source VARCHAR(50),
+    status VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS CUSTOMER_SEGMENT_ASSIGNMENT (
     assignment_id SERIAL PRIMARY KEY,
     user_id INT NOT NULL, -- Logical relation to ECOMMERCE.USERS
     segment_id INT NOT NULL REFERENCES CUSTOMER_SEGMENTS(segment_id),
-    assigned_date DATE NOT NULL,
+    assigned_date DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS EMAIL_CAMPAIGN_EVENTS (
     event_id SERIAL PRIMARY KEY,
     campaign_id INT NOT NULL REFERENCES CAMPAIGNS(campaign_id),
     user_id INT NOT NULL, -- Logical relation to ECOMMERCE.USERS
-    event_type VARCHAR(50) NOT NULL,
+    event_type VARCHAR(50),
     event_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP

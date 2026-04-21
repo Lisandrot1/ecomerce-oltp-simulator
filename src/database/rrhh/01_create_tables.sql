@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS ATTENDANCE (
     check_in TIME,
     check_out TIME,
     hours_worked NUMERIC(5,2),
-    status VARCHAR(50) NOT NULL,
+    status VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -70,12 +70,12 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TABLE IF NOT EXISTS PAYROLL (
     payroll_id SERIAL PRIMARY KEY,
     employee_id INT NOT NULL REFERENCES EMPLOYEES(employee_id),
-    period_start DATE NOT NULL,
-    period_end DATE NOT NULL,
-    base_salary NUMERIC(12,2) NOT NULL,
+    period_start DATE,
+    period_end DATE,
+    base_salary NUMERIC(12,2),
     bonuses NUMERIC(12,2) DEFAULT 0.00,
     deductions NUMERIC(12,2) DEFAULT 0.00,
-    total_payment NUMERIC(12,2) NOT NULL,
+    total_payment NUMERIC(12,2),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -86,7 +86,7 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TABLE IF NOT EXISTS PERFORMANCE (
     performance_id SERIAL PRIMARY KEY,
     employee_id INT NOT NULL REFERENCES EMPLOYEES(employee_id),
-    review_date DATE NOT NULL,
+    review_date DATE,
     score INT CHECK (score BETWEEN 1 AND 5),
     reviewer_id INT NOT NULL REFERENCES EMPLOYEES(employee_id),
     comments TEXT,

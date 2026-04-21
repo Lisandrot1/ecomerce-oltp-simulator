@@ -9,6 +9,24 @@ from datetime import datetime, timedelta
 faker = Faker()
 log = logs()
 
+def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
+    """
+    Aplica suciedad a los datos: nulos o duplicados.
+    Retorna (data_modificada, debe_duplicar)
+    """
+    should_duplicate = False
+    if random.random() < null_prob:
+        # Seleccionar 1-2 campos para poner en NULL (evitando IDs de relación)
+        keys = [k for k in data.keys() if not k.endswith('_id') and k not in ['created_at', 'updated_at']]
+        if keys:
+            for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
+                data[k] = None
+                
+    if random.random() < duplicate_prob:
+        should_duplicate = True
+        
+    return data, should_duplicate
+
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 
@@ -119,15 +137,26 @@ def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
                 'source': random.choice(metadata['lead_sources']),
                 'status': random.choice(metadata['lead_statuses'])
             }
-            result = conn.execute(
-                text("""
-                    INSERT INTO LEADS (campaign_id, user_id, first_name, last_name, email, phone, city, country, source, status)
-                    VALUES (:camp_id, :user_id, :fname, :lname, :email, :phone, :city, :country, :source, :status)
-                    RETURNING lead_id
-                """),
-                data
-            )
-            lead_ids.append(result.fetchone()[0])
+            
+            # Aplicar corrupción 20% (10% nulos, 10% duplicados)
+            data, should_duplicate = apply_corruption(data, 0.10, 0.10)
+
+            def do_insert_lead(d):
+                res = conn.execute(
+                    text("""
+                        INSERT INTO LEADS (campaign_id, user_id, first_name, last_name, email, phone, city, country, source, status)
+                        VALUES (:camp_id, :user_id, :fname, :lname, :email, :phone, :city, :country, :source, :status)
+                        RETURNING lead_id
+                    """),
+                    d
+                )
+                return res.fetchone()[0]
+
+            lid = do_insert_lead(data)
+            lead_ids.append(lid)
+            
+            if should_duplicate:
+                do_insert_lead(data)
             existing_emails.add(email)
             existing_phones.add(phone)
             count += 1
@@ -185,13 +214,22 @@ def insert_segment_assignments(conn, user_ids, segment_ids, volume=30):
                 'seg_id': random.choice(segment_ids),
                 'date': faker.date_between(start_date='-6m', end_date='today')
             }
-            conn.execute(
-                text("""
-                    INSERT INTO CUSTOMER_SEGMENT_ASSIGNMENT (user_id, segment_id, assigned_date)
-                    VALUES (:user_id, :seg_id, :date)
-                """),
-                data
-            )
+            
+            # Aplicar corrupción 20% (10% nulos, 10% duplicados)
+            data, should_duplicate = apply_corruption(data, 0.10, 0.10)
+
+            def do_insert_assignment(d):
+                conn.execute(
+                    text("""
+                        INSERT INTO CUSTOMER_SEGMENT_ASSIGNMENT (user_id, segment_id, assigned_date)
+                        VALUES (:user_id, :seg_id, :date)
+                    """),
+                    d
+                )
+            
+            do_insert_assignment(data)
+            if should_duplicate:
+                do_insert_assignment(data)
             count += 1
         conn.commit()
         log.info(f'Insert SEGMENT_ASSIGNMENTS exitoso: {count} registros')
@@ -291,13 +329,22 @@ def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
                 'type': random.choice(metadata['event_types']),
                 'date': datetime.now() - timedelta(minutes=random.randint(1, 10000))
             }
-            conn.execute(
-                text("""
-                    INSERT INTO EMAIL_CAMPAIGN_EVENTS (campaign_id, user_id, event_type, event_date)
-                    VALUES (:camp_id, :user_id, :type, :date)
-                """),
-                data
-            )
+            
+            # Aplicar corrupción 20% (10% nulos, 10% duplicados)
+            data, should_duplicate = apply_corruption(data, 0.10, 0.10)
+
+            def do_insert_event(d):
+                conn.execute(
+                    text("""
+                        INSERT INTO EMAIL_CAMPAIGN_EVENTS (campaign_id, user_id, event_type, event_date)
+                        VALUES (:camp_id, :user_id, :type, :date)
+                    """),
+                    d
+                )
+            
+            do_insert_event(data)
+            if should_duplicate:
+                do_insert_event(data)
             count += 1
         conn.commit()
         log.info(f'Insert CAMPAIGN_EVENTS exitoso: {count} registros')

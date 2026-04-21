@@ -9,6 +9,24 @@ from datetime import datetime, timedelta
 faker = Faker()
 log = logs()
 
+def apply_corruption(data, null_prob=0.05, duplicate_prob=0.05):
+    """
+    Aplica suciedad a los datos: nulos o duplicados.
+    Retorna (data_modificada, debe_duplicar)
+    """
+    should_duplicate = False
+    if random.random() < null_prob:
+        # Seleccionar 1-2 campos para poner en NULL (evitando IDs de relación)
+        keys = [k for k in data.keys() if not k.endswith('_id') and k not in ['created_at', 'updated_at', 'period_start', 'period_end']]
+        if keys:
+            for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
+                data[k] = None
+                
+    if random.random() < duplicate_prob:
+        should_duplicate = True
+        
+    return data, should_duplicate
+
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 
@@ -215,13 +233,22 @@ def insert_attendance(conn, employee_ids, days=5):
                         'hours': hours,
                         'status': 'Presente'
                     }
-                    conn.execute(
-                        text("""
-                            INSERT INTO ATTENDANCE (employee_id, date, check_in, check_out, hours_worked, status)
-                            VALUES (:employee_id, :date, :check_in, :check_out, :hours, :status)
-                        """),
-                        data
-                    )
+                    
+                    # Aplicar corrupción 10% (5% nulos, 5% duplicados)
+                    data, should_duplicate = apply_corruption(data, 0.05, 0.05)
+
+                    def do_insert_attendance(d):
+                        conn.execute(
+                            text("""
+                                INSERT INTO ATTENDANCE (employee_id, date, check_in, check_out, hours_worked, status)
+                                VALUES (:employee_id, :date, :check_in, :check_out, :hours, :status)
+                            """),
+                            d
+                        )
+                    
+                    do_insert_attendance(data)
+                    if should_duplicate:
+                        do_insert_attendance(data)
                     count += 1
         conn.commit()
         log.info(f'Insert ATTENDANCE exitoso: {count} registros')
@@ -255,13 +282,22 @@ def insert_payroll(conn, employee_ids):
                 'deductions': deductions,
                 'total': total
             }
-            conn.execute(
-                text("""
-                    INSERT INTO PAYROLL (employee_id, period_start, period_end, base_salary, bonuses, deductions, total_payment)
-                    VALUES (:emp_id, :start, :end, :base, :bonuses, :deductions, :total)
-                """),
-                data
-            )
+            
+            # Aplicar corrupción 10% (5% nulos, 5% duplicados)
+            data, should_duplicate = apply_corruption(data, 0.05, 0.05)
+
+            def do_insert_payroll(d):
+                conn.execute(
+                    text("""
+                        INSERT INTO PAYROLL (employee_id, period_start, period_end, base_salary, bonuses, deductions, total_payment)
+                        VALUES (:emp_id, :start, :end, :base, :bonuses, :deductions, :total)
+                    """),
+                    d
+                )
+            
+            do_insert_payroll(data)
+            if should_duplicate:
+                do_insert_payroll(data)
             count += 1
         conn.commit()
         log.info(f'Insert PAYROLL exitoso: {count} registros')
@@ -284,13 +320,22 @@ def insert_performance(conn, employee_ids):
                 'reviewer': reviewer_id,
                 'comments': faker.sentence(nb_words=10)
             }
-            conn.execute(
-                text("""
-                    INSERT INTO PERFORMANCE (employee_id, review_date, score, reviewer_id, comments)
-                    VALUES (:emp_id, :date, :score, :reviewer, :comments)
-                """),
-                data
-            )
+            
+            # Aplicar corrupción 10% (5% nulos, 5% duplicados)
+            data, should_duplicate = apply_corruption(data, 0.05, 0.05)
+
+            def do_insert_performance(d):
+                conn.execute(
+                    text("""
+                        INSERT INTO PERFORMANCE (employee_id, review_date, score, reviewer_id, comments)
+                        VALUES (:emp_id, :date, :score, :reviewer, :comments)
+                    """),
+                    d
+                )
+            
+            do_insert_performance(data)
+            if should_duplicate:
+                do_insert_performance(data)
             count += 1
         conn.commit()
         log.info(f'Insert PERFORMANCE exitoso: {count} registros')
