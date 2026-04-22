@@ -92,37 +92,25 @@ def insert_campaigns(conn, employee_ids=None, volume=5):
 
 def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
     try:
-        log.info(f'Iniciando inserción de {volume} LEADS (Marketing) desde metadata')
+        log.info(f'Iniciando inserción de {volume} LEADS (Marketing)')
+        if not campaign_ids:
+            log.warning("No campaign_ids provided for insert_leads. Skipping.")
+            return []
+            
         metadata = load_metadata()
         geo_data = load_geo()
         email_domains = ['gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'protonmail.com', 'zoho.com', 'hotmail.com']
         
-        # Obtener existentes
-        result = conn.execute(text("SELECT email, phone FROM LEADS"))
-        rows = result.fetchall()
-        existing_emails = {row[0] for row in rows}
-        existing_phones = {row[1] for row in rows}
-        
-        lead_ids = []
-        
-        count = 0
-        while count < volume:
+        leads_to_insert = []
+        for _ in range(volume):
             first_name = faker.first_name()
             last_name = faker.last_name()
             domain = random.choice(email_domains)
             
-            email = f"{first_name.lower()}.{last_name.lower()}@{domain}"
-            while email in existing_emails:
-                email = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 9999)}@{domain}"
-            
+            # Generamos datos base con aleatoriedad para evitar colisiones involuntarias
+            email = f"{first_name.lower()}.{last_name.lower()}{random.randint(1, 999999)}@{domain}"
             phone = f"+{random.randint(1, 99)} {random.randint(100, 999)} {random.randint(1000, 9999)}"
-            while phone in existing_phones:
-                phone = f"+{random.randint(1, 99)} {random.randint(100, 999)} {random.randint(1000, 9999)}"
-            
             geo = random.choice(geo_data)
-            
-            # Simular que algunos leads ya son usuarios (conversión)
-            # Ajustamos la probabilidad al 40% según solicitud
             uid = random.choice(user_ids) if user_ids and random.random() > 0.6 else None
             
             data = {
@@ -140,29 +128,23 @@ def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
             
             # Aplicar corrupción 20% (10% nulos, 10% duplicados)
             data, should_duplicate = apply_corruption(data, 0.10, 0.10)
-
-            def do_insert_lead(d):
-                res = conn.execute(
-                    text("""
-                        INSERT INTO LEADS (campaign_id, user_id, first_name, last_name, email, phone, city, country, source, status)
-                        VALUES (:camp_id, :user_id, :fname, :lname, :email, :phone, :city, :country, :source, :status)
-                        RETURNING lead_id
-                    """),
-                    d
-                )
-                return res.fetchone()[0]
-
-            lid = do_insert_lead(data)
-            lead_ids.append(lid)
             
+            leads_to_insert.append(data)
             if should_duplicate:
-                do_insert_lead(data)
-            existing_emails.add(email)
-            existing_phones.add(phone)
-            count += 1
+                leads_to_insert.append(data.copy())
+
+        if leads_to_insert:
+            conn.execute(
+                text("""
+                    INSERT INTO LEADS (campaign_id, user_id, first_name, last_name, email, phone, city, country, source, status)
+                    VALUES (:camp_id, :user_id, :fname, :lname, :email, :phone, :city, :country, :source, :status)
+                """),
+                leads_to_insert
+            )
+            
         conn.commit()
-        log.info(f'Insert LEADS exitoso: {len(lead_ids)} registros')
-        return lead_ids
+        log.info(f'Insert LEADS exitoso: {len(leads_to_insert)} registros (incluyendo duplicados)')
+        return [] # No retornamos IDs por performance
     except Exception as ex:
         conn.rollback()
         log.error(f'Error en insert_leads: {ex}', exc_info=True)
@@ -318,11 +300,14 @@ def simulate_marketing_updates(conn, volume=5):
 
 def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
     try:
-        log.info(f'Iniciando inserción de {volume} CAMPAIGN_EVENTS (Marketing) desde metadata')
+        log.info(f'Iniciando inserción de {volume} CAMPAIGN_EVENTS (Marketing)')
+        if not user_ids or not campaign_ids:
+            log.warning("Missing user_ids or campaign_ids for campaign events. Skipping.")
+            return
+
         metadata = load_metadata()
-        count = 0
+        events_to_insert = []
         for _ in range(volume):
-            if not user_ids or not campaign_ids: break
             data = {
                 'camp_id': random.choice(campaign_ids),
                 'user_id': random.choice(user_ids),
@@ -332,22 +317,22 @@ def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
             
             # Aplicar corrupción 20% (10% nulos, 10% duplicados)
             data, should_duplicate = apply_corruption(data, 0.10, 0.10)
-
-            def do_insert_event(d):
-                conn.execute(
-                    text("""
-                        INSERT INTO EMAIL_CAMPAIGN_EVENTS (campaign_id, user_id, event_type, event_date)
-                        VALUES (:camp_id, :user_id, :type, :date)
-                    """),
-                    d
-                )
             
-            do_insert_event(data)
+            events_to_insert.append(data)
             if should_duplicate:
-                do_insert_event(data)
-            count += 1
+                events_to_insert.append(data.copy())
+
+        if events_to_insert:
+            conn.execute(
+                text("""
+                    INSERT INTO EMAIL_CAMPAIGN_EVENTS (campaign_id, user_id, event_type, event_date)
+                    VALUES (:camp_id, :user_id, :type, :date)
+                """),
+                events_to_insert
+            )
+            
         conn.commit()
-        log.info(f'Insert CAMPAIGN_EVENTS exitoso: {count} registros')
+        log.info(f'Insert CAMPAIGN_EVENTS exitoso: {len(events_to_insert)} registros')
     except Exception as ex:
         conn.rollback()
         log.error(f'Error en insert_campaign_events: {ex}', exc_info=True)

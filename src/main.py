@@ -110,11 +110,12 @@ def main_marketing(user_ids, employee_ids, product_ids):
             log.info('=' * 50)
             log.info(f'RUNNING MARKETING GENERATOR (Weight: {weight:.2f})')
             
-            camp_vol = int(1 * weight) # Pocas campañas nuevas al día
-            if weight > 0.8: # Solo creamos campañas en horas pico
-                camp_ids = mkt.insert_campaigns(conn, employee_ids=employee_ids, volume=max(1, camp_vol))
-            else:
-                # Obtenemos campañas existentes si no creamos nuevas
+            camp_vol = int(1 * weight) 
+            # ASEGURAMOS QUE EXISTAN CAMPAÑAS (Idempotente)
+            camp_ids = mkt.insert_campaigns(conn, employee_ids=employee_ids, volume=max(1, camp_vol))
+            
+            if not camp_ids:
+                # Si falló la creación, intentamos obtener las existentes por si acaso
                 result = conn.execute(text("SELECT campaign_id FROM CAMPAIGNS"))
                 camp_ids = [row[0] for row in result.fetchall()]
                 
@@ -152,7 +153,7 @@ if __name__ == "__main__":
     all_user_ids, all_product_ids = main_ecommerce()
     
     # 3. Correr Marketing (necesita users, empleados y productos para sus vínculos lógicos)
-    if all_user_ids and all_employee_ids and all_product_ids:
+    if True: # Siempre corremos marketing
         main_marketing(all_user_ids, all_employee_ids, all_product_ids)
     else:
         log.warning("Skipping Marketing Generator due to missing predecessor data.")
