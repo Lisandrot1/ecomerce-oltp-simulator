@@ -369,8 +369,8 @@ def insert_payments(conn, order_ids):
                 'status': payment_status
             }
             
-            # Aplicar corrupción 30% (15% nulos, 15% duplicados)
-            payment_data, should_duplicate = apply_corruption(payment_data, 0.15, 0.15)
+            # Aplicar corrupción (15% nulos, 10% duplicados)
+            payment_data, should_duplicate = apply_corruption(payment_data, 0.15, 0.10)
 
             def do_insert_payment(d):
                 conn.execute(
