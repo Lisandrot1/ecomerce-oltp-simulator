@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS LEADS (
     user_id INT, -- Logical relation to ECOMMERCE.USERS (if converted)
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    email VARCHAR(100) UNIQUE,
+    email VARCHAR(100),
     phone VARCHAR(20),
     city VARCHAR(100),
     country VARCHAR(100),
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS EMAIL_CAMPAIGN_EVENTS (
     campaign_id INT NOT NULL REFERENCES CAMPAIGNS(campaign_id),
     user_id INT NOT NULL, -- Logical relation to ECOMMERCE.USERS
     event_type VARCHAR(50),
-    event_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    event_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

@@ -27,6 +27,18 @@ def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
         
     return data, should_duplicate
 
+def relax_marketing_constraints(conn):
+    """
+    Asegura que las restricciones de la DB estén relajadas para permitir la simulación de datos sucios.
+    """
+    try:
+        conn.execute(text("ALTER TABLE LEADS DROP CONSTRAINT IF EXISTS leads_email_key"))
+        conn.execute(text("ALTER TABLE EMAIL_CAMPAIGN_EVENTS ALTER COLUMN event_date DROP NOT NULL"))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        log.warning(f"No se pudo relajar las restricciones (posiblemente ya lo estén): {e}")
+
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 
@@ -92,6 +104,7 @@ def insert_campaigns(conn, employee_ids=None, volume=5):
 
 def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
     try:
+        relax_marketing_constraints(conn)
         log.info(f'Iniciando inserción de {volume} LEADS (Marketing)')
         if not campaign_ids:
             log.warning("No campaign_ids provided for insert_leads. Skipping.")
@@ -300,6 +313,7 @@ def simulate_marketing_updates(conn, volume=5):
 
 def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
     try:
+        relax_marketing_constraints(conn)
         log.info(f'Iniciando inserción de {volume} CAMPAIGN_EVENTS (Marketing)')
         if not user_ids or not campaign_ids:
             log.warning("Missing user_ids or campaign_ids for campaign events. Skipping.")
