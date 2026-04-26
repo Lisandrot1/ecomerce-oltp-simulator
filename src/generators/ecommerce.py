@@ -178,9 +178,9 @@ def insert_providers(conn):
         return {}
 
 
-def insert_products(conn, category_ids: dict, provider_ids: dict):
+def insert_products(conn, category_ids: dict, provider_ids: dict, volume=10):
     try:
-        log.info('Iniciando creacion/actualizacion de PRODUCTS')
+        log.info(f'Iniciando creacion/actualizacion de PRODUCTS (Lote: {volume})')
         with open(DATA_DIR / 'products.json', 'r', encoding='utf-8') as f:
             products_list = json.load(f)
             
@@ -189,19 +189,26 @@ def insert_products(conn, category_ids: dict, provider_ids: dict):
         existing_codes = {row[0] for row in result.fetchall()}
         
         products_to_insert = []
+        
+        # Si la base de datos está vacía, usamos un lote inicial base (ej: 200)
+        # Si no, usamos el volumen ponderado que viene de main.py
+        limit = 200 if not existing_codes else volume
+        
+        count = 0
         for p in products_list:
+            if count >= limit:
+                break
+                
             code = p.get('code')
             if code in existing_codes:
                 continue
 
-            # Mapeamos los nombres a sus respectivos IDs
             cat_name = p.get('category')
             prov_name = p.get('provider')
             cat_id = category_ids.get(cat_name)
             prov_id = provider_ids.get(prov_name)
             
             if cat_id is None or prov_id is None:
-                log.warning(f"Skipping product '{p['name']}': Category '{cat_name}' or Provider '{prov_name}' not found.")
                 continue
 
             products_to_insert.append({
@@ -214,8 +221,10 @@ def insert_products(conn, category_ids: dict, provider_ids: dict):
                 'stock': p['stock'],
                 'status': 'active'
             })
+            count += 1
             
         if products_to_insert:
+            log.info(f'Insertando {len(products_to_insert)} nuevos productos al catálogo.')
             conn.execute(
                 text("""
                     INSERT INTO products 

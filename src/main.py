@@ -43,11 +43,12 @@ def main_ecommerce():
 
             product_price_map = eco.get_product_price_map(conn)
             
-            if not product_price_map:
-                log.info("Inicializando metadata (Categorías, Proveedores, Productos)...")
-                category_ids = eco.insert_categories(conn)
-                provider_ids = eco.insert_providers(conn)
-                product_price_map = eco.insert_products(conn, category_ids, provider_ids)
+            # Inicialización/Crecimiento de Catálogo (Idempotente e incremental)
+            category_ids = eco.insert_categories(conn)
+            provider_ids = eco.insert_providers(conn)
+            # Crecimiento de productos ponderado (Hasta ~20 en picos, 0 en la noche)
+            prod_vol = int(20 * weight)
+            product_price_map = eco.insert_products(conn, category_ids, provider_ids, volume=prod_vol)
 
             # USUARIOS NUEVOS
             user_vol = int(1000 * weight) # Meta: ~50k/día acumulados con 89 runs
