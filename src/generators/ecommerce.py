@@ -12,29 +12,22 @@ from datetime import datetime, timedelta
 faker = Faker() # Usamos genérico para que no se sesgue solo a es_CO en ciudades
 log = logs()
 
-def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
+def apply_corruption(data, fields=None, prob=0.0, duplicate_prob=0.0):
     """
-    Aplica suciedad a los datos: nulos o duplicados.
+    Aplica suciedad a los datos: nulos en campos específicos o duplicados.
     Retorna (data_modificada, debe_duplicar)
     """
-    # Asegurar que el porcentaje no supere el 10% según requerimiento
-    null_prob = min(null_prob, 0.10)
-    duplicate_prob = min(duplicate_prob, 0.10)
-    
     should_duplicate = False
-    if random.random() < null_prob:
-        # Seleccionar 1-2 campos para poner en NULL
-        # EVITANDO: IDs de relación, fechas de auditoría y campos ENUM/fijos (status, type, method)
-        protected_patterns = ['_id', 'created_at', 'updated_at', 'status', 'type', 'method']
-        keys = [
-            k for k in data.keys() 
-            if not any(pat in k.lower() for pat in protected_patterns)
-        ]
-        
-        if keys:
-            for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
-                data[k] = None
+    
+    # Corrupción de campos (Nulos)
+    if fields and random.random() < prob:
+        # Seleccionamos al menos uno de los campos especificados para poner en NULL
+        to_null = random.sample(fields, random.randint(1, len(fields)))
+        for f in to_null:
+            if f in data:
+                data[f] = None
                 
+    # Duplicados
     if random.random() < duplicate_prob:
         should_duplicate = True
         
@@ -86,8 +79,8 @@ def insert_users(conn, volume=5):
                 'country': geo['country']
             }
 
-            # Aplicar corrupción 10% (entrada de usuario)
-            user_data, should_duplicate = apply_corruption(user_data, 0.10, 0.10)
+            # Aplicar corrupción 8% en email, phone, address
+            user_data, should_duplicate = apply_corruption(user_data, fields=['email', 'phone', 'address'], prob=0.08, duplicate_prob=0.05)
 
             def do_insert_user(d):
                 res = conn.execute(
@@ -128,14 +121,21 @@ def insert_categories(conn):
         category_map = {row[0]: row[1] for row in result.fetchall()}
 
         for cat in categories_list:
-            if cat['name'] not in category_map:
+                cat_data = {
+                    'name': cat['name'],
+                    'description': cat['description']
+                }
+                
+                # Aplicar corrupción 1% en name_category
+                cat_data, _ = apply_corruption(cat_data, fields=['name'], prob=0.01)
+                
                 result = conn.execute(
                     text("""
                         INSERT INTO categories (name_category, description)
                         VALUES (:name, :description)
                         RETURNING category_id
                     """),
-                    cat
+                    cat_data
                 )
                 category_map[cat['name']] = result.fetchone()[0]
             
@@ -159,13 +159,23 @@ def insert_providers(conn):
 
         for prov in providers_list:
             if prov['name'] not in provider_map:
+                prov_data = {
+                    'name': prov['name'],
+                    'address': prov['address'],
+                    'email': prov['email'],
+                    'status': 'active'
+                }
+                
+                # Aplicar corrupción 3% en email, status
+                prov_data, _ = apply_corruption(prov_data, fields=['email', 'status'], prob=0.03)
+                
                 result = conn.execute(
                     text("""
                         INSERT INTO providers (name_provider, address, email, status)
-                        VALUES (:name, :address, :email, 'active')
+                        VALUES (:name, :address, :email, :status)
                         RETURNING provider_id
                     """),
-                    prov
+                    prov_data
                 )
                 provider_map[prov['name']] = result.fetchone()[0]
             
@@ -211,7 +221,7 @@ def insert_products(conn, category_ids: dict, provider_ids: dict, volume=10):
             if cat_id is None or prov_id is None:
                 continue
 
-            products_to_insert.append({
+            product_data = {
                 'name': p['name'],
                 'category_id': cat_id,
                 'provider_id': prov_id,
@@ -220,7 +230,12 @@ def insert_products(conn, category_ids: dict, provider_ids: dict, volume=10):
                 'sales_price': p['sales_price'],
                 'stock': p['stock'],
                 'status': 'active'
-            })
+            }
+            
+            # Aplicar corrupción 5% en stock, precios, status
+            product_data, _ = apply_corruption(product_data, fields=['stock', 'cost_price', 'sales_price', 'status'], prob=0.05)
+            
+            products_to_insert.append(product_data)
             count += 1
             
         if products_to_insert:
@@ -288,12 +303,17 @@ def insert_orders(conn, user_ids, volume=100):
                 k=1
             )[0]
             
-            orders_to_insert.append({
+            order_data = {
                 'user_id': user_id,
                 'shipping_cost': round(random.uniform(5.0, 20.0), 2),
                 'total_amount': 0.0,
                 'status': status
-            })
+            }
+            
+            # Aplicar corrupción 2% en shipping_cost, status
+            order_data, _ = apply_corruption(order_data, fields=['shipping_cost', 'status'], prob=0.02)
+            
+            orders_to_insert.append(order_data)
             
         if orders_to_insert:
             result = conn.execute(
@@ -338,12 +358,17 @@ def insert_order_details(conn, order_ids, product_price_map):
                 price = product_price_map[p_id]
                 order_total += (qty * price)
                 
-                details_to_insert.append({
+                detail_data = {
                     'products_id': p_id,
                     'order_id': order_id,
                     'quantity': qty,
                     'unit_price': price
-                })
+                }
+                
+                # Aplicar corrupción 1% en quantity, unit_price
+                detail_data, _ = apply_corruption(detail_data, fields=['quantity', 'unit_price'], prob=0.01)
+                
+                details_to_insert.append(detail_data)
             
             order_totals[order_id] = order_total
             
@@ -395,6 +420,8 @@ def insert_payments(conn, order_ids):
                 'amount': amount,
                 'status': payment_status
             }
+            
+            payment_data, _ = apply_corruption(payment_data, fields=['payment_method', 'status'], prob=0.02)
             
             conn.execute(
                 text("""

@@ -9,6 +9,27 @@ from datetime import datetime, timedelta
 faker = Faker()
 log = logs()
 
+def apply_corruption(data, fields=None, prob=0.0, duplicate_prob=0.0):
+    """
+    Aplica suciedad a los datos: nulos en campos específicos o duplicados.
+    Retorna (data_modificada, debe_duplicar)
+    """
+    should_duplicate = False
+    
+    # Corrupción de campos (Nulos)
+    if fields and random.random() < prob:
+        # Seleccionamos al menos uno de los campos especificados para poner en NULL
+        to_null = random.sample(fields, random.randint(1, len(fields)))
+        for f in to_null:
+            if f in data:
+                data[f] = None
+                
+    # Duplicados
+    if random.random() < duplicate_prob:
+        should_duplicate = True
+        
+    return data, should_duplicate
+
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 
@@ -43,15 +64,27 @@ def insert_departments(conn):
                 'location': location,
                 'budget': round(random.uniform(d['budget_range'][0], d['budget_range'][1]), 2)
             }
-            result = conn.execute(
-                text("""
-                    INSERT INTO DEPARTMENTS (name_department, location, budget)
-                    VALUES (:name, :location, :budget)
-                    RETURNING department_id
-                """),
-                data
-            )
-            val = result.fetchone()[0]
+            
+            # Corrupción DEPARTMENTS: 2% (location, budget)
+            data, should_duplicate = apply_corruption(data, fields=['location', 'budget'], prob=0.02, duplicate_prob=0.02)
+            
+            # Regla especial: budget "N/A" -> usamos 0 o NULL (ya manejado por apply_corruption)
+            
+            def do_insert_dept(d_item):
+                res = conn.execute(
+                    text("""
+                        INSERT INTO DEPARTMENTS (name_department, location, budget)
+                        VALUES (:name, :location, :budget)
+                        RETURNING department_id
+                    """),
+                    d_item
+                )
+                return res.fetchone()[0]
+
+            val = do_insert_dept(data)
+            if should_duplicate:
+                do_insert_dept(data)
+                
             dept_ids.append(val)
             dept_map[d['name']] = val
 
@@ -85,6 +118,19 @@ def insert_positions(conn):
                 'min': p['salary_range'][0],
                 'max': p['salary_range'][1]
             }
+            
+            # Corrupción POSITIONS: 2% (min_salary, max_salary, level)
+            if random.random() < 0.02:
+                corruption_type = random.choice(['min_null', 'min_neg', 'max_low', 'level_case'])
+                if corruption_type == 'min_null':
+                    data['min'] = None
+                elif corruption_type == 'min_neg':
+                    data['min'] = -1000.0
+                elif corruption_type == 'max_low':
+                    data['max'] = data['min'] - 100 if data['min'] else 0
+                elif corruption_type == 'level_case':
+                    data['level'] = random.choice(['junior', 'JUNIOR', 'Jr.'])
+            
             result = conn.execute(
                 text("""
                     INSERT INTO POSITIONS (name_position, level, min_salary, max_salary)
@@ -149,15 +195,24 @@ def insert_employees(conn, dept_ids, pos_ids, volume=20):
                 'status': random.choice(['Activo', 'Activo', 'Activo', 'Inactivo', 'Vacaciones'])
             }
             
-            result = conn.execute(
-                text("""
-                    INSERT INTO EMPLOYEES (first_name, last_name, email, phone, hire_date, birth_date, salary, department_id, position_id, status)
-                    VALUES (:first_name, :last_name, :email, :phone, :hire_date, :birth_date, :salary, :department_id, :position_id, :status)
-                    RETURNING employee_id
-                """),
-                emp_data
-            )
-            eid = result.fetchone()[0]
+            # Corrupción EMPLOYEES: 8% (input humano)
+            emp_data, should_duplicate = apply_corruption(emp_data, fields=['first_name', 'last_name', 'email', 'phone'], prob=0.08, duplicate_prob=0.02)
+
+            def do_insert_emp(d_item):
+                res = conn.execute(
+                    text("""
+                        INSERT INTO EMPLOYEES (first_name, last_name, email, phone, hire_date, birth_date, salary, department_id, position_id, status)
+                        VALUES (:first_name, :last_name, :email, :phone, :hire_date, :birth_date, :salary, :department_id, :position_id, :status)
+                        RETURNING employee_id
+                    """),
+                    d_item
+                )
+                return res.fetchone()[0]
+
+            eid = do_insert_emp(emp_data)
+            if should_duplicate:
+                do_insert_emp(emp_data)
+                
             employee_ids.append(eid)
             existing_emails.add(email)
             existing_phones.add(phone)
@@ -216,6 +271,9 @@ def insert_attendance(conn, employee_ids, days=5):
                         'status': 'Presente'
                     }
                     
+                    # Corrupción ATTENDANCE: 3% (errores de registro)
+                    data, _ = apply_corruption(data, fields=['hours', 'status', 'check_in', 'check_out'], prob=0.03)
+                    
                     conn.execute(
                         text("""
                             INSERT INTO ATTENDANCE (employee_id, date, check_in, check_out, hours_worked, status)
@@ -257,6 +315,9 @@ def insert_payroll(conn, employee_ids):
                 'total': total
             }
             
+            # Corrupción PAYROLL: 2% (transaccional)
+            data, _ = apply_corruption(data, fields=['base', 'bonuses', 'deductions', 'total'], prob=0.02)
+            
             conn.execute(
                 text("""
                     INSERT INTO PAYROLL (employee_id, period_start, period_end, base_salary, bonuses, deductions, total_payment)
@@ -286,6 +347,9 @@ def insert_performance(conn, employee_ids):
                 'reviewer': reviewer_id,
                 'comments': faker.sentence(nb_words=10)
             }
+            
+            # Corrupción PERFORMANCE: 5% (input humano)
+            data, _ = apply_corruption(data, fields=['score', 'comments'], prob=0.05)
             
             conn.execute(
                 text("""

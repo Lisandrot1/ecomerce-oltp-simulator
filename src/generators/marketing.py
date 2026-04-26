@@ -9,29 +9,22 @@ from datetime import datetime, timedelta
 faker = Faker()
 log = logs()
 
-def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
+def apply_corruption(data, fields=None, prob=0.0, duplicate_prob=0.0):
     """
-    Aplica suciedad a los datos: nulos o duplicados.
+    Aplica suciedad a los datos: nulos en campos específicos o duplicados.
     Retorna (data_modificada, debe_duplicar)
     """
-    # Asegurar que el porcentaje no supere el 10%
-    null_prob = min(null_prob, 0.10)
-    duplicate_prob = min(duplicate_prob, 0.10)
-
     should_duplicate = False
-    if random.random() < null_prob:
-        # Seleccionar 1-2 campos para poner en NULL
-        # EVITANDO: IDs de relación, fechas de auditoría y campos críticos (status, type, channel, source)
-        protected_patterns = ['_id', 'created_at', 'updated_at', 'status', 'type', 'channel', 'source', 'fname', 'lname']
-        keys = [
-            k for k in data.keys() 
-            if not any(pat in k.lower() for pat in protected_patterns)
-        ]
-        
-        if keys:
-            for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
-                data[k] = None
+    
+    # Corrupción de campos (Nulos)
+    if fields and random.random() < prob:
+        # Seleccionamos al menos uno de los campos especificados para poner en NULL
+        to_null = random.sample(fields, random.randint(1, len(fields)))
+        for f in to_null:
+            if f in data:
+                data[f] = None
                 
+    # Duplicados
     if random.random() < duplicate_prob:
         should_duplicate = True
         
@@ -92,15 +85,24 @@ def insert_campaigns(conn, employee_ids=None, volume=5):
                 'emp_id': random.choice(employee_ids) if employee_ids else None
             }
             
-            result = conn.execute(
-                text("""
-                    INSERT INTO CAMPAIGNS (name_campaign, channel, start_date, end_date, budget, spent, status, employee_id)
-                    VALUES (:name, :channel, :start, :end, :budget, :spent, :status, :emp_id)
-                    RETURNING campaign_id
-                """),
-                data
-            )
-            cid = result.fetchone()[0]
+            # Corrupción CAMPAIGNS: 6% (equipo marketing)
+            data, should_duplicate = apply_corruption(data, fields=['name', 'budget', 'spent'], prob=0.06, duplicate_prob=0.02)
+            
+            def do_insert_camp(d_item):
+                res = conn.execute(
+                    text("""
+                        INSERT INTO CAMPAIGNS (name_campaign, channel, start_date, end_date, budget, spent, status, employee_id)
+                        VALUES (:name, :channel, :start, :end, :budget, :spent, :status, :emp_id)
+                        RETURNING campaign_id
+                    """),
+                    d_item
+                )
+                return res.fetchone()[0]
+
+            cid = do_insert_camp(data)
+            if should_duplicate:
+                do_insert_camp(data)
+                
             campaign_ids.append(cid)
             campaign_map[name] = cid
 
@@ -149,8 +151,8 @@ def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
                 'status': random.choice(metadata['lead_statuses'])
             }
             
-            # Aplicar corrupción 20% (10% nulos, 10% duplicados)
-            data, should_duplicate = apply_corruption(data, 0.10, 0.10)
+            # Aplicar corrupción 10% (input humano, formularios web)
+            data, should_duplicate = apply_corruption(data, fields=['fname', 'lname', 'email', 'phone', 'city'], prob=0.10, duplicate_prob=0.05)
             
             leads_to_insert.append(data)
             if should_duplicate:
@@ -188,13 +190,17 @@ def insert_customer_segments(conn):
                 segment_ids.append(segment_map[s['name']])
                 continue
 
+            # Corrupción CUSTOMER_SEGMENTS: 2% (casi nunca cambia)
+            s_data = s.copy()
+            s_data, _ = apply_corruption(s_data, fields=['name', 'desc'], prob=0.02)
+
             result = conn.execute(
                 text("""
                     INSERT INTO CUSTOMER_SEGMENTS (name_segment, min_purchases, max_purchases, description)
                     VALUES (:name, :min, :max, :desc)
                     RETURNING segment_id
                 """),
-                s
+                s_data
             )
             val = result.fetchone()[0]
             segment_ids.append(val)
@@ -219,6 +225,9 @@ def insert_segment_assignments(conn, user_ids, segment_ids, volume=30):
                 'seg_id': random.choice(segment_ids),
                 'date': faker.date_between(start_date='-6m', end_date='today')
             }
+            
+            # Corrupción CUSTOMER_SEGMENT_ASSIGNMENT: 3% (sistema)
+            data, _ = apply_corruption(data, fields=['date'], prob=0.03)
             
             conn.execute(
                 text("""
@@ -260,6 +269,9 @@ def insert_promotions(conn, product_ids=None, volume=5):
                 'prod_id': random.choice(product_ids) if product_ids else None,
                 'status': 'active'
             }
+            # Corrupción PROMOTIONS: 5% (lo carga el admin)
+            data, _ = apply_corruption(data, fields=['name', 'disc', 'min'], prob=0.05)
+            
             result = conn.execute(
                 text("""
                     INSERT INTO PROMOTIONS (name_promotion, discount_percent, start_date, end_date, min_purchase_amount, products_id, status)
@@ -330,6 +342,16 @@ def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
                 'type': random.choice(metadata['event_types']),
                 'date': datetime.now() - timedelta(minutes=random.randint(1, 10000))
             }
+            
+            # Corrupción EMAIL_CAMPAIGN_EVENTS: 8% (event_type inconsistente)
+            if random.random() < 0.08:
+                corruption_type = random.choice(['null', 'case', 'junk'])
+                if corruption_type == 'null':
+                    data['type'] = None
+                elif corruption_type == 'case':
+                    data['type'] = data['type'].upper() if random.random() > 0.5 else data['type'].lower()
+                elif corruption_type == 'junk':
+                    data['type'] = 'UNKNOWN_EVENT_' + str(random.randint(1, 999))
             
             events_to_insert.append(data)
 
