@@ -185,43 +185,55 @@ def insert_products(conn, category_ids: dict, provider_ids: dict):
             products_list = json.load(f)
             
         # Obtener existentes para evitar duplicados por código
-        result = conn.execute(text("SELECT code, products_id, sales_price FROM products"))
-        product_price_map = {row[0]: (row[1], float(row[2])) for row in result.fetchall()}
+        result = conn.execute(text("SELECT code FROM products"))
+        existing_codes = {row[0] for row in result.fetchall()}
         
-        final_price_map = {}
+        products_to_insert = []
         for p in products_list:
             code = p.get('code')
-            if code in product_price_map:
-                p_id, price = product_price_map[code]
-                final_price_map[p_id] = price
+            if code in existing_codes:
                 continue
 
             # Mapeamos los nombres a sus respectivos IDs
             cat_name = p.get('category')
             prov_name = p.get('provider')
-            p['category_id'] = category_ids.get(cat_name)
-            p['provider_id'] = provider_ids.get(prov_name)
+            cat_id = category_ids.get(cat_name)
+            prov_id = provider_ids.get(prov_name)
             
-            if p['category_id'] is None or p['provider_id'] is None:
+            if cat_id is None or prov_id is None:
                 log.warning(f"Skipping product '{p['name']}': Category '{cat_name}' or Provider '{prov_name}' not found.")
                 continue
 
-            result = conn.execute(
+            products_to_insert.append({
+                'name': p['name'],
+                'category_id': cat_id,
+                'provider_id': prov_id,
+                'code': code,
+                'cost_price': p['cost_price'],
+                'sales_price': p['sales_price'],
+                'stock': p['stock'],
+                'status': 'active'
+            })
+            
+        if products_to_insert:
+            conn.execute(
                 text("""
                     INSERT INTO products 
                         (name_product, category_id, provider_id, code,
                          cost_price, sales_price, stock, status)
                     VALUES 
                         (:name, :category_id, :provider_id, :code,
-                         :cost_price, :sales_price, :stock, 'active')
-                    RETURNING products_id, sales_price
+                         :cost_price, :sales_price, :stock, :status)
                 """),
-                p
+                products_to_insert
             )
-            row = result.fetchone()
-            final_price_map[row[0]] = float(row[1])
             
         conn.commit()
+        
+        # Retornar mapeo de todos los productos (existentes + nuevos) para las órdenes
+        result = conn.execute(text("SELECT products_id, sales_price FROM products WHERE status = 'active'"))
+        final_price_map = {row[0]: float(row[1]) for row in result.fetchall()}
+        
         log.info(f'PRODUCTS listos — {len(final_price_map)} registros en total')
         return final_price_map
     except Exception as ex:
@@ -253,44 +265,41 @@ def get_product_price_map(conn):
 def insert_orders(conn, user_ids, volume=100):
     try:
         log.info(f'Iniciando creacion de {volume} ORDERS')
-        order_ids = []
-        statuses = ['pending', 'processing', 'completed', 'cancelled']
         
         if not user_ids:
             log.error("No hay usuarios disponibles para crear ordenes.")
             return []
 
+        orders_to_insert = []
         for _ in range(volume):
             user_id = random.choice(user_ids)
-            
-            # Ajustar estados de pedidos con pesos: 50% completado, 30% proceso, 10% cancelado, 10% pendiente
             status = random.choices(
                 ['completed', 'processing', 'cancelled', 'pending'],
                 weights=[0.5, 0.3, 0.1, 0.1],
                 k=1
             )[0]
             
-            order_data = {
+            orders_to_insert.append({
                 'user_id': user_id,
                 'shipping_cost': round(random.uniform(5.0, 20.0), 2),
                 'total_amount': 0.0,
                 'status': status
-            }
+            })
             
-            res = conn.execute(
+        if orders_to_insert:
+            result = conn.execute(
                 text("""
                     INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
                     VALUES (:user_id, :shipping_cost, :total_amount, :status)
                     RETURNING orders_id
                 """),
-                order_data
+                orders_to_insert
             )
-            oid = res.fetchone()[0]
-            order_ids.append(oid)
-        
-        conn.commit()
-        log.info(f'Insert ORDERS exitoso — {len(order_ids)} registros')
-        return order_ids
+            order_ids = [row[0] for row in result.fetchall()]
+            conn.commit()
+            log.info(f'Insert ORDERS exitoso — {len(order_ids)} registros')
+            return order_ids
+        return []
     except Exception as ex:
         conn.rollback()
         log.error(f'ERROR en insert_orders: {ex}', exc_info=True)
@@ -306,40 +315,45 @@ def insert_order_details(conn, order_ids, product_price_map):
             log.error("No hay productos disponibles para crear detalles de orden.")
             return
 
+        details_to_insert = []
+        order_totals = {}
+
         for order_id in order_ids:
             num_items = random.randint(1, 5)
             order_total = 0.0
             
-            # Seleccionar productos aleatorios para esta orden
             selected_products = random.sample(product_ids, min(num_items, len(product_ids)))
             
             for p_id in selected_products:
                 qty = random.randint(1, 10)
                 price = product_price_map[p_id]
-                subtotal = qty * price
-                order_total += subtotal
+                order_total += (qty * price)
                 
-                detail_data = {
+                details_to_insert.append({
                     'products_id': p_id,
                     'order_id': order_id,
                     'quantity': qty,
                     'unit_price': price
-                }
-                
-                conn.execute(
-                    text("""
-                        INSERT INTO ORDERS_DETAILS (products_id, order_id, quantity, unit_price)
-                        VALUES (:products_id, :order_id, :quantity, :unit_price)
-                    """),
-                    detail_data
-                )
+                })
             
-            # Actualizar el total de la orden
+            order_totals[order_id] = order_total
+            
+        if details_to_insert:
             conn.execute(
-                text("UPDATE ORDERS SET total_amount = :total_amount WHERE orders_id = :order_id"),
-                {'total_amount': order_total, 'order_id': order_id}
+                text("""
+                    INSERT INTO ORDERS_DETAILS (products_id, order_id, quantity, unit_price)
+                    VALUES (:products_id, :order_id, :quantity, :unit_price)
+                """),
+                details_to_insert
             )
             
+            # Actualizar totales en lote
+            for oid, total in order_totals.items():
+                conn.execute(
+                    text("UPDATE ORDERS SET total_amount = :total_amount WHERE orders_id = :order_id"),
+                    {'total_amount': total, 'order_id': oid}
+                )
+                
         conn.commit()
         log.info(f'Insert ORDERS_DETAILS y actualización de totales exitosa')
     except Exception as ex:
