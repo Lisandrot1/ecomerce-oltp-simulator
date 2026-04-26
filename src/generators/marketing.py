@@ -21,8 +21,8 @@ def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
     should_duplicate = False
     if random.random() < null_prob:
         # Seleccionar 1-2 campos para poner en NULL
-        # EVITANDO: IDs de relación, fechas de auditoría y campos ENUM/fijos
-        protected_patterns = ['_id', 'created_at', 'updated_at', 'status', 'type', 'channel', 'source']
+        # EVITANDO: IDs de relación, fechas de auditoría y campos críticos (status, type, channel, source)
+        protected_patterns = ['_id', 'created_at', 'updated_at', 'status', 'type', 'channel', 'source', 'fname', 'lname']
         keys = [
             k for k in data.keys() 
             if not any(pat in k.lower() for pat in protected_patterns)
@@ -220,21 +220,13 @@ def insert_segment_assignments(conn, user_ids, segment_ids, volume=30):
                 'date': faker.date_between(start_date='-6m', end_date='today')
             }
             
-            # Aplicar corrupción 20% (10% nulos, 10% duplicados)
-            data, should_duplicate = apply_corruption(data, 0.10, 0.10)
-
-            def do_insert_assignment(d):
-                conn.execute(
-                    text("""
-                        INSERT INTO CUSTOMER_SEGMENT_ASSIGNMENT (user_id, segment_id, assigned_date)
-                        VALUES (:user_id, :seg_id, :date)
-                    """),
-                    d
-                )
-            
-            do_insert_assignment(data)
-            if should_duplicate:
-                do_insert_assignment(data)
+            conn.execute(
+                text("""
+                    INSERT INTO CUSTOMER_SEGMENT_ASSIGNMENT (user_id, segment_id, assigned_date)
+                    VALUES (:user_id, :seg_id, :date)
+                """),
+                data
+            )
             count += 1
         conn.commit()
         log.info(f'Insert SEGMENT_ASSIGNMENTS exitoso: {count} registros')
@@ -339,12 +331,7 @@ def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
                 'date': datetime.now() - timedelta(minutes=random.randint(1, 10000))
             }
             
-            # Aplicar corrupción 20% (10% nulos, 10% duplicados)
-            data, should_duplicate = apply_corruption(data, 0.10, 0.10)
-            
             events_to_insert.append(data)
-            if should_duplicate:
-                events_to_insert.append(data.copy())
 
         if events_to_insert:
             conn.execute(

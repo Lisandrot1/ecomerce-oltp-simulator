@@ -86,15 +86,26 @@ def insert_users(conn, volume=5):
                 'country': geo['country']
             }
 
-            result = conn.execute(
-                text("""
-                    INSERT INTO USERS (name_user, lastname, address, email, phone, city, country) 
-                    VALUES (:name_user, :lastname, :address, :email, :phone, :city, :country)
-                    RETURNING user_id
-                """),
-                user_data
-            )
-            user_ids.append(result.fetchone()[0])
+            # Aplicar corrupción 10% (entrada de usuario)
+            user_data, should_duplicate = apply_corruption(user_data, 0.10, 0.10)
+
+            def do_insert_user(d):
+                res = conn.execute(
+                    text("""
+                        INSERT INTO USERS (name_user, lastname, address, email, phone, city, country) 
+                        VALUES (:name_user, :lastname, :address, :email, :phone, :city, :country)
+                        RETURNING user_id
+                    """),
+                    d
+                )
+                return res.fetchone()[0]
+
+            uid = do_insert_user(user_data)
+            user_ids.append(uid)
+            
+            if should_duplicate:
+                do_insert_user(user_data)
+
             existing_emails.add(email)
             existing_phones.add(phone)
 
@@ -266,25 +277,16 @@ def insert_orders(conn, user_ids, volume=100):
                 'status': status
             }
             
-            # Aplicar corrupción 10% (máximo permitido)
-            order_data, should_duplicate = apply_corruption(order_data, 0.10, 0.10)
-            
-            def do_insert(d):
-                res = conn.execute(
-                    text("""
-                        INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
-                        VALUES (:user_id, :shipping_cost, :total_amount, :status)
-                        RETURNING orders_id
-                    """),
-                    d
-                )
-                return res.fetchone()[0]
-
-            oid = do_insert(order_data)
+            res = conn.execute(
+                text("""
+                    INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
+                    VALUES (:user_id, :shipping_cost, :total_amount, :status)
+                    RETURNING orders_id
+                """),
+                order_data
+            )
+            oid = res.fetchone()[0]
             order_ids.append(oid)
-            
-            if should_duplicate:
-                do_insert(order_data) # Duplicado (no guardamos el ID para evitar procesarlo doble en detalles si no queremos, o sí)
         
         conn.commit()
         log.info(f'Insert ORDERS exitoso — {len(order_ids)} registros')
@@ -324,21 +326,13 @@ def insert_order_details(conn, order_ids, product_price_map):
                     'unit_price': price
                 }
                 
-                # Aplicar corrupción 10%
-                detail_data, should_duplicate = apply_corruption(detail_data, 0.10, 0.10)
-
-                def do_insert_detail(d):
-                    conn.execute(
-                        text("""
-                            INSERT INTO ORDERS_DETAILS (products_id, order_id, quantity, unit_price)
-                            VALUES (:products_id, :order_id, :quantity, :unit_price)
-                        """),
-                        d
-                    )
-                
-                do_insert_detail(detail_data)
-                if should_duplicate:
-                    do_insert_detail(detail_data)
+                conn.execute(
+                    text("""
+                        INSERT INTO ORDERS_DETAILS (products_id, order_id, quantity, unit_price)
+                        VALUES (:products_id, :order_id, :quantity, :unit_price)
+                    """),
+                    detail_data
+                )
             
             # Actualizar el total de la orden
             conn.execute(
@@ -379,21 +373,13 @@ def insert_payments(conn, order_ids):
                 'status': payment_status
             }
             
-            # Aplicar corrupción 10%
-            payment_data, should_duplicate = apply_corruption(payment_data, 0.10, 0.10)
-
-            def do_insert_payment(d):
-                conn.execute(
-                    text("""
-                        INSERT INTO PAYMENTS (order_id, payment_method, amount, status)
-                        VALUES (:order_id, :payment_method, :amount, :status)
-                    """),
-                    d
-                )
-
-            do_insert_payment(payment_data)
-            if should_duplicate:
-                do_insert_payment(payment_data)
+            conn.execute(
+                text("""
+                    INSERT INTO PAYMENTS (order_id, payment_method, amount, status)
+                    VALUES (:order_id, :payment_method, :amount, :status)
+                """),
+                payment_data
+            )
             
         conn.commit()
         log.info(f'Insert PAYMENTS exitoso')
