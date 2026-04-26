@@ -195,8 +195,8 @@ def insert_employees(conn, dept_ids, pos_ids, volume=20):
                 'status': random.choice(['Activo', 'Activo', 'Activo', 'Inactivo', 'Vacaciones'])
             }
             
-            # Corrupción EMPLOYEES: 8% (input humano)
-            emp_data, should_duplicate = apply_corruption(emp_data, fields=['first_name', 'last_name', 'email', 'phone'], prob=0.08, duplicate_prob=0.02)
+            # Corrupción EMPLOYEES: 5% nulos + 5% duplicados (input humano)
+            emp_data, should_duplicate = apply_corruption(emp_data, fields=['first_name', 'last_name', 'email', 'phone'], prob=0.05, duplicate_prob=0.05)
 
             def do_insert_emp(d_item):
                 res = conn.execute(
@@ -257,11 +257,15 @@ def insert_attendance(conn, employee_ids, days=5):
                     check_in = datetime.strptime(f"{random.randint(7, 9)}:{random.randint(0, 59)}", "%H:%M").time()
                     check_out = datetime.strptime(f"{random.randint(16, 18)}:{random.randint(0, 59)}", "%H:%M").time()
                     
-                    # Cálculo simple de horas
+                    # Cálculo de horas base
                     h_in = check_in.hour + check_in.minute/60
                     h_out = check_out.hour + check_out.minute/60
                     hours = round(h_out - h_in, 2)
                     
+                    # Corrupción lógica de tiempos: 5% (salida antes que entrada)
+                    if random.random() < 0.05:
+                        check_in, check_out = check_out, check_in
+
                     data = {
                         'employee_id': emp_id,
                         'date': date,
@@ -271,17 +275,23 @@ def insert_attendance(conn, employee_ids, days=5):
                         'status': 'Presente'
                     }
                     
-                    # Corrupción ATTENDANCE: 3% (errores de registro)
-                    data, _ = apply_corruption(data, fields=['hours', 'status', 'check_in', 'check_out'], prob=0.03)
+                    # Corrupción ATTENDANCE: 5% nulos + 5% duplicados
+                    data, should_duplicate = apply_corruption(data, fields=['hours', 'status', 'check_in', 'check_out'], prob=0.05, duplicate_prob=0.05)
                     
-                    conn.execute(
-                        text("""
-                            INSERT INTO ATTENDANCE (employee_id, date, check_in, check_out, hours_worked, status)
-                            VALUES (:employee_id, :date, :check_in, :check_out, :hours, :status)
-                        """),
-                        data
-                    )
-                    count += 1
+                    def do_insert_attendance(d_item):
+                        conn.execute(
+                            text("""
+                                INSERT INTO ATTENDANCE (employee_id, date, check_in, check_out, hours_worked, status)
+                                VALUES (:employee_id, :date, :check_in, :check_out, :hours, :status)
+                            """),
+                            d_item
+                        )
+
+                    do_insert_attendance(data)
+                    if should_duplicate:
+                        do_insert_attendance(data)
+                    
+                    count += (2 if should_duplicate else 1)
         conn.commit()
         log.info(f'Insert ATTENDANCE exitoso: {count} registros')
     except Exception as ex:

@@ -79,8 +79,8 @@ def insert_users(conn, volume=5):
                 'country': geo['country']
             }
 
-            # Aplicar corrupción 8% en email, phone, address
-            user_data, should_duplicate = apply_corruption(user_data, fields=['email', 'phone', 'address'], prob=0.08, duplicate_prob=0.05)
+            # Aplicar corrupción 5% nulos y 5% duplicados
+            user_data, should_duplicate = apply_corruption(user_data, fields=['email', 'phone', 'address'], prob=0.05, duplicate_prob=0.05)
 
             def do_insert_user(d):
                 res = conn.execute(

@@ -151,8 +151,8 @@ def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
                 'status': random.choice(metadata['lead_statuses'])
             }
             
-            # Aplicar corrupción 10% (input humano, formularios web)
-            data, should_duplicate = apply_corruption(data, fields=['fname', 'lname', 'email', 'phone', 'city'], prob=0.10, duplicate_prob=0.05)
+            # Aplicar corrupción 5% nulos y 5% duplicados (input humano)
+            data, should_duplicate = apply_corruption(data, fields=['fname', 'lname', 'email', 'phone', 'city'], prob=0.05, duplicate_prob=0.05)
             
             leads_to_insert.append(data)
             if should_duplicate:
