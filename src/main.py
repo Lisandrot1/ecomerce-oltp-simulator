@@ -5,6 +5,9 @@ import generators.rrhh as rrhh
 import generators.marketing as mkt
 import random
 import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 log = logs(__name__)
 
@@ -47,14 +50,14 @@ def main_ecommerce():
                 product_price_map = eco.insert_products(conn, category_ids, provider_ids)
 
             # USUARIOS NUEVOS
-            user_vol = int(300 * weight) # Meta: ~20k/día acumulados con 89 runs
+            user_vol = int(1000 * weight) # Meta: ~50k/día acumulados con 89 runs
             if user_vol > 0:
                 eco.insert_users(conn, volume=user_vol)
 
             # ÓRDENES
             all_user_ids = eco.get_all_user_ids(conn)
             if all_user_ids and product_price_map:
-                order_vol = int(1600 * weight) # Meta: ~100k/día acumulados con 89 runs
+                order_vol = int(5000 * weight) # Meta: ~300k/día acumulados con 89 runs
                 if order_vol > 0:
                     order_ids = eco.insert_orders(conn, all_user_ids, volume=order_vol)
                     eco.insert_order_details(conn, order_ids, product_price_map)
@@ -119,7 +122,7 @@ def main_marketing(user_ids, employee_ids, product_ids):
                 result = conn.execute(text("SELECT campaign_id FROM CAMPAIGNS"))
                 camp_ids = [row[0] for row in result.fetchall()]
                 
-            lead_vol = int(300 * weight) # Meta: ~20k/día acumulado
+            lead_vol = int(1000 * weight) # Meta: ~50k/día acumulado
             if lead_vol > 0 and camp_ids:
                 mkt.insert_leads(conn, camp_ids, user_ids=user_ids, volume=lead_vol)
             
@@ -133,7 +136,7 @@ def main_marketing(user_ids, employee_ids, product_ids):
             # Siempre las llamamos; la función interna maneja si ya existen
             mkt.insert_promotions(conn, product_ids=product_ids)
             
-            event_vol = int(1000 * weight) # Eventos de email
+            event_vol = int(3000 * weight) # Meta: ~150k/día acumulado
             if event_vol > 0 and camp_ids:
                 mkt.insert_campaign_events(conn, camp_ids, user_ids, volume=event_vol)
             

@@ -14,10 +14,20 @@ def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
     Aplica suciedad a los datos: nulos o duplicados.
     Retorna (data_modificada, debe_duplicar)
     """
+    # Asegurar que el porcentaje no supere el 10%
+    null_prob = min(null_prob, 0.10)
+    duplicate_prob = min(duplicate_prob, 0.10)
+
     should_duplicate = False
     if random.random() < null_prob:
-        # Seleccionar 1-2 campos para poner en NULL (evitando IDs de relación)
-        keys = [k for k in data.keys() if not k.endswith('_id') and k not in ['created_at', 'updated_at']]
+        # Seleccionar 1-2 campos para poner en NULL
+        # EVITANDO: IDs de relación, fechas de auditoría y campos ENUM/fijos
+        protected_patterns = ['_id', 'created_at', 'updated_at', 'status', 'type', 'channel', 'source']
+        keys = [
+            k for k in data.keys() 
+            if not any(pat in k.lower() for pat in protected_patterns)
+        ]
+        
         if keys:
             for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
                 data[k] = None

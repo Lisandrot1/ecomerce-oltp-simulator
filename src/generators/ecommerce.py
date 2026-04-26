@@ -12,15 +12,25 @@ from datetime import datetime, timedelta
 faker = Faker() # Usamos genérico para que no se sesgue solo a es_CO en ciudades
 log = logs()
 
-def apply_corruption(data, null_prob=0.15, duplicate_prob=0.15):
+def apply_corruption(data, null_prob=0.10, duplicate_prob=0.10):
     """
     Aplica suciedad a los datos: nulos o duplicados.
     Retorna (data_modificada, debe_duplicar)
     """
+    # Asegurar que el porcentaje no supere el 10% según requerimiento
+    null_prob = min(null_prob, 0.10)
+    duplicate_prob = min(duplicate_prob, 0.10)
+    
     should_duplicate = False
     if random.random() < null_prob:
-        # Seleccionar 1-2 campos para poner en NULL (evitando IDs de relación)
-        keys = [k for k in data.keys() if not k.endswith('_id') and k not in ['created_at', 'updated_at']]
+        # Seleccionar 1-2 campos para poner en NULL
+        # EVITANDO: IDs de relación, fechas de auditoría y campos ENUM/fijos (status, type, method)
+        protected_patterns = ['_id', 'created_at', 'updated_at', 'status', 'type', 'method']
+        keys = [
+            k for k in data.keys() 
+            if not any(pat in k.lower() for pat in protected_patterns)
+        ]
+        
         if keys:
             for k in random.sample(keys, min(len(keys), random.randint(1, 2))):
                 data[k] = None
@@ -256,8 +266,8 @@ def insert_orders(conn, user_ids, volume=100):
                 'status': status
             }
             
-            # Aplicar corrupción 30% (15% nulos, 15% duplicados)
-            order_data, should_duplicate = apply_corruption(order_data, 0.15, 0.15)
+            # Aplicar corrupción 10% (máximo permitido)
+            order_data, should_duplicate = apply_corruption(order_data, 0.10, 0.10)
             
             def do_insert(d):
                 res = conn.execute(
@@ -314,8 +324,8 @@ def insert_order_details(conn, order_ids, product_price_map):
                     'unit_price': price
                 }
                 
-                # Aplicar corrupción 30% (15% nulos, 15% duplicados)
-                detail_data, should_duplicate = apply_corruption(detail_data, 0.15, 0.15)
+                # Aplicar corrupción 10%
+                detail_data, should_duplicate = apply_corruption(detail_data, 0.10, 0.10)
 
                 def do_insert_detail(d):
                     conn.execute(
@@ -369,8 +379,8 @@ def insert_payments(conn, order_ids):
                 'status': payment_status
             }
             
-            # Aplicar corrupción (15% nulos, 10% duplicados)
-            payment_data, should_duplicate = apply_corruption(payment_data, 0.15, 0.10)
+            # Aplicar corrupción 10%
+            payment_data, should_duplicate = apply_corruption(payment_data, 0.10, 0.10)
 
             def do_insert_payment(d):
                 conn.execute(
