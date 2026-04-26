@@ -33,6 +33,42 @@ def apply_corruption(data, fields=None, prob=0.0, duplicate_prob=0.0):
         
     return data, should_duplicate
 
+def relax_ecommerce_constraints(conn):
+    """
+    Relaja las restricciones de la DB de Ecommerce para permitir la simulación de datos sucios.
+    """
+    try:
+        # USERS
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN name_user DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN lastname DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN address DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN email DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN phone DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN city DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS ALTER COLUMN country DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE USERS DROP CONSTRAINT IF EXISTS users_email_key"))
+        conn.execute(text("ALTER TABLE USERS DROP CONSTRAINT IF EXISTS users_phone_key"))
+        
+        # PRODUCTS
+        conn.execute(text("ALTER TABLE PRODUCTS ALTER COLUMN stock DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PRODUCTS ALTER COLUMN status DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PRODUCTS DROP CONSTRAINT IF EXISTS products_code_key"))
+        
+        # PROVIDERS
+        conn.execute(text("ALTER TABLE PROVIDERS ALTER COLUMN status DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PROVIDERS DROP CONSTRAINT IF EXISTS providers_email_key"))
+        
+        # ORDERS
+        conn.execute(text("ALTER TABLE ORDERS ALTER COLUMN status DROP NOT NULL"))
+        
+        # CATEGORIES
+        conn.execute(text("ALTER TABLE CATEGORIES ALTER COLUMN name_category DROP NOT NULL"))
+        
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        log.warning(f"No se pudo relajar las restricciones de Ecommerce: {e}")
+
 # Apunta al archivo donde está este código (ecommerce.py)
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
@@ -43,6 +79,7 @@ def load_geo_metadata():
 
 def insert_users(conn, volume=5):
     try:
+        relax_ecommerce_constraints(conn)
         geo_data = load_geo_metadata()
         email_domains = ['gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'protonmail.com', 'zoho.com', 'hotmail.com']
         
@@ -316,15 +353,18 @@ def insert_orders(conn, user_ids, volume=100):
             orders_to_insert.append(order_data)
             
         if orders_to_insert:
-            result = conn.execute(
-                text("""
-                    INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
-                    VALUES (:user_id, :shipping_cost, :total_amount, :status)
-                    RETURNING orders_id
-                """),
-                orders_to_insert
-            )
-            order_ids = [row[0] for row in result.fetchall()]
+            order_ids = []
+            for order_data in orders_to_insert:
+                result = conn.execute(
+                    text("""
+                        INSERT INTO ORDERS (user_id, shipping_cost, total_amount, status)
+                        VALUES (:user_id, :shipping_cost, :total_amount, :status)
+                        RETURNING orders_id
+                    """),
+                    order_data
+                )
+                order_ids.append(result.fetchone()[0])
+                
             conn.commit()
             log.info(f'Insert ORDERS exitoso — {len(order_ids)} registros')
             return order_ids

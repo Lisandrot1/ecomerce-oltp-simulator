@@ -30,6 +30,35 @@ def apply_corruption(data, fields=None, prob=0.0, duplicate_prob=0.0):
         
     return data, should_duplicate
 
+def relax_rrhh_constraints(conn):
+    """
+    Relaja las restricciones de la DB de RRHH para permitir la simulación de datos sucios.
+    """
+    try:
+        # DEPARTMENTS
+        conn.execute(text("ALTER TABLE DEPARTMENTS ALTER COLUMN location DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE DEPARTMENTS ALTER COLUMN budget DROP NOT NULL"))
+        
+        # POSITIONS
+        conn.execute(text("ALTER TABLE POSITIONS ALTER COLUMN min_salary DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE POSITIONS ALTER COLUMN max_salary DROP NOT NULL"))
+        
+        # EMPLOYEES
+        conn.execute(text("ALTER TABLE EMPLOYEES ALTER COLUMN first_name DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE EMPLOYEES ALTER COLUMN last_name DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE EMPLOYEES ALTER COLUMN email DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE EMPLOYEES ALTER COLUMN phone DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE EMPLOYEES DROP CONSTRAINT IF EXISTS employees_email_key"))
+        
+        # ATTENDANCE
+        conn.execute(text("ALTER TABLE ATTENDANCE ALTER COLUMN status DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE ATTENDANCE ALTER COLUMN date DROP NOT NULL"))
+        
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        log.warning(f"No se pudo relajar las restricciones de RRHH: {e}")
+
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 
@@ -43,6 +72,7 @@ def load_geo_metadata():
 
 def insert_departments(conn):
     try:
+        relax_rrhh_constraints(conn)
         log.info('Iniciando inserción/verificación de DEPARTMENTS (RRHH)')
         metadata = load_rrhh_metadata()
         geo_data = load_geo_metadata()

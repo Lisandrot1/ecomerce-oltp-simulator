@@ -5,9 +5,15 @@ import generators.rrhh as rrhh
 import generators.marketing as mkt
 import random
 import datetime
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
+# Carga manual de variables de entorno si existe el archivo .env (usando os)
+if os.path.exists(".env"):
+    with open(".env") as f:
+        for line in f:
+            if "=" in line and not line.startswith("#"):
+                k, v = line.strip().split("=", 1)
+                os.environ[k] = v.strip('"').strip("'")
 
 log = logs(__name__)
 
