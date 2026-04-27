@@ -340,7 +340,7 @@ def insert_payroll(conn, employee_ids):
         rows = result.fetchall()
         
         for emp_id, salary in rows:
-            salary_f = float(salary)
+            salary_f = float(salary if salary is not None else 0.0)
             bonuses = round(random.uniform(0, salary_f * 0.1), 2) if random.random() > 0.8 else 0
             deductions = round(salary_f * 0.08, 2) # 8% salud/pensión en Colombia
             total = round(salary_f + bonuses - deductions, 2)
@@ -415,7 +415,7 @@ def simulate_rrhh_updates(conn, volume=5):
         # 1. Actualizar salarios
         result = conn.execute(text("SELECT employee_id, salary FROM EMPLOYEES ORDER BY RANDOM() LIMIT :vol"), {'vol': volume})
         for eid, salary in result.fetchall():
-            new_salary = float(salary) * random.uniform(1.02, 1.05)
+            new_salary = float(salary if salary is not None else 0.0) * random.uniform(1.02, 1.05)
             conn.execute(
                 text("UPDATE EMPLOYEES SET salary = :salary WHERE employee_id = :id"),
                 {'salary': new_salary, 'id': eid}

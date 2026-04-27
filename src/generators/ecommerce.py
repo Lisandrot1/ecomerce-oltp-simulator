@@ -51,10 +51,14 @@ def relax_ecommerce_constraints(conn):
         
         # PRODUCTS
         conn.execute(text("ALTER TABLE PRODUCTS ALTER COLUMN stock DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PRODUCTS ALTER COLUMN cost_price DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PRODUCTS ALTER COLUMN sales_price DROP NOT NULL"))
         conn.execute(text("ALTER TABLE PRODUCTS ALTER COLUMN status DROP NOT NULL"))
         conn.execute(text("ALTER TABLE PRODUCTS DROP CONSTRAINT IF EXISTS products_code_key"))
         
         # PROVIDERS
+        conn.execute(text("ALTER TABLE PROVIDERS ALTER COLUMN email DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PROVIDERS ALTER COLUMN name_provider DROP NOT NULL"))
         conn.execute(text("ALTER TABLE PROVIDERS ALTER COLUMN status DROP NOT NULL"))
         conn.execute(text("ALTER TABLE PROVIDERS DROP CONSTRAINT IF EXISTS providers_email_key"))
         
@@ -63,6 +67,7 @@ def relax_ecommerce_constraints(conn):
         
         # CATEGORIES
         conn.execute(text("ALTER TABLE CATEGORIES ALTER COLUMN name_category DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CATEGORIES ALTER COLUMN description DROP NOT NULL"))
         
         conn.commit()
     except Exception as e:
@@ -79,7 +84,6 @@ def load_geo_metadata():
 
 def insert_users(conn, volume=5):
     try:
-        relax_ecommerce_constraints(conn)
         geo_data = load_geo_metadata()
         email_domains = ['gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'protonmail.com', 'zoho.com', 'hotmail.com']
         
@@ -149,6 +153,7 @@ def insert_users(conn, volume=5):
 
 def insert_categories(conn):
     try:
+        relax_ecommerce_constraints(conn)
         log.info('Iniciando creacion/actualizacion de CATEGORIES')
         with open(DATA_DIR / 'categories.json', 'r', encoding='utf-8') as f:
             categories_list = json.load(f)
@@ -293,7 +298,7 @@ def insert_products(conn, category_ids: dict, provider_ids: dict, volume=10):
         
         # Retornar mapeo de todos los productos (existentes + nuevos) para las órdenes
         result = conn.execute(text("SELECT products_id, sales_price FROM products WHERE status = 'active'"))
-        final_price_map = {row[0]: float(row[1]) for row in result.fetchall()}
+        final_price_map = {row[0]: float(row[1] if row[1] is not None else 0.0) for row in result.fetchall()}
         
         log.info(f'PRODUCTS listos — {len(final_price_map)} registros en total')
         return final_price_map
@@ -317,7 +322,7 @@ def get_product_price_map(conn):
     """Retorna un mapeo de products_id -> sales_price para productos existentes."""
     try:
         result = conn.execute(text("SELECT products_id, sales_price FROM PRODUCTS WHERE status = 'active'"))
-        return {row[0]: float(row[1]) for row in result.fetchall()}
+        return {row[0]: float(row[1] if row[1] is not None else 0.0) for row in result.fetchall()}
     except Exception as ex:
         log.error(f'ERROR en get_product_price_map: {ex}')
         return {}

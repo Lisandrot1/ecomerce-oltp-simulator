@@ -37,6 +37,26 @@ def relax_marketing_constraints(conn):
     try:
         conn.execute(text("ALTER TABLE LEADS DROP CONSTRAINT IF EXISTS leads_email_key"))
         conn.execute(text("ALTER TABLE EMAIL_CAMPAIGN_EVENTS ALTER COLUMN event_date DROP NOT NULL"))
+        
+        # CAMPAIGNS
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN name_campaign DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN channel DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN start_date DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN end_date DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN budget DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN spent DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE CAMPAIGNS ALTER COLUMN status DROP NOT NULL"))
+
+        # PROMOTIONS
+        conn.execute(text("ALTER TABLE PROMOTIONS ALTER COLUMN name_promotion DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PROMOTIONS ALTER COLUMN discount_percent DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PROMOTIONS ALTER COLUMN start_date DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PROMOTIONS ALTER COLUMN end_date DROP NOT NULL"))
+        conn.execute(text("ALTER TABLE PROMOTIONS ALTER COLUMN status DROP NOT NULL"))
+
+        # CUSTOMER_SEGMENTS
+        conn.execute(text("ALTER TABLE CUSTOMER_SEGMENTS ALTER COLUMN name_segment DROP NOT NULL"))
+
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -55,6 +75,7 @@ def load_geo():
 
 def insert_campaigns(conn, employee_ids=None, volume=5):
     try:
+        relax_marketing_constraints(conn)
         log.info(f'Iniciando inserción/verificación de CAMPAIGNS (Marketing)')
         metadata = load_metadata()
         
@@ -116,7 +137,6 @@ def insert_campaigns(conn, employee_ids=None, volume=5):
 
 def insert_leads(conn, campaign_ids, user_ids=None, volume=50):
     try:
-        relax_marketing_constraints(conn)
         log.info(f'Iniciando inserción de {volume} LEADS (Marketing)')
         if not campaign_ids:
             log.warning("No campaign_ids provided for insert_leads. Skipping.")
@@ -313,7 +333,7 @@ def simulate_marketing_updates(conn, volume=5):
         # 2. Actualizar spent en Campañas
         result = conn.execute(text("SELECT campaign_id, spent FROM CAMPAIGNS ORDER BY RANDOM() LIMIT :vol"), {'vol': max(1, volume // 2)})
         for cid, spent in result.fetchall():
-            new_spent = float(spent) + random.uniform(1000, 10000)
+            new_spent = float(spent if spent is not None else 0.0) + random.uniform(1000, 10000)
             conn.execute(
                 text("UPDATE CAMPAIGNS SET spent = :spent WHERE campaign_id = :id"),
                 {'spent': new_spent, 'id': cid}
@@ -327,7 +347,6 @@ def simulate_marketing_updates(conn, volume=5):
 
 def insert_campaign_events(conn, campaign_ids, user_ids, volume=100):
     try:
-        relax_marketing_constraints(conn)
         log.info(f'Iniciando inserción de {volume} CAMPAIGN_EVENTS (Marketing)')
         if not user_ids or not campaign_ids:
             log.warning("Missing user_ids or campaign_ids for campaign events. Skipping.")
